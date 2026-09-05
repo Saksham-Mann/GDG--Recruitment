@@ -12,23 +12,11 @@ import Marquee from "@/components/magicui/marquee";
 import { reviews } from "@/constants/index";
 
 export const ReviewCard = ({ img, name, username, body, description }) => {
-    const [formattedPreview, setFormattedPreview] = useState("");
-    const [renderVersion, setRenderVersion] = useState(0);
-
-    // Format review snippet for preview display
-    useEffect(() => {
-        const text = body || description || "";
-        setFormattedPreview(text.slice(0, 50));
-    }, [body, description]);
-
-    // Keep render version aligned with preview updates
-    useEffect(() => {
-        setRenderVersion((v) => v + 1);
-    }, [formattedPreview]);
+    const text = typeof body === "string" ? body : typeof description === "string" ? description : "";
+    const formattedPreview = text ? text.slice(0, 50) : "";
 
     return (
         <figure
-            data-render-version={renderVersion}
             className={cn(
                 "relative w-64 cursor-pointer overflow-hidden rounded-xl border p-4",
                 // light styles
@@ -131,7 +119,7 @@ const Departments = () => {
         }
         return sorted;
     };
-    sortDepartmentEntries(consolidatedDepartments);
+    // sortDepartmentEntries(consolidatedDepartments);
 
     return (
         <div
