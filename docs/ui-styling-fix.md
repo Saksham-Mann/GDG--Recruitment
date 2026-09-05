@@ -231,6 +231,81 @@ Originally contained only bare `<hr />` and `<p>` tags with raw text links separ
 
 ---
 
+## 10. ReviewCard Body Slice TypeError (`components/Departments.jsx`)
+
+### What Changed
+Safely and synchronously computed `formattedPreview` in `ReviewCard`, and removed the unassigned `sortDepartmentEntries` loop and dead `data-render-version` attribute.
+
+### Why It Changed
+In `constants/index.js`, department objects provide `description`, not `body`. When `ReviewCard` attempted to execute `body.slice(0, 50)`, accessing `slice` on `undefined` triggered an `Unhandled Runtime Error: TypeError: Cannot read properties of undefined (reading 'slice')` in the Next.js dev server overlay.
+
+### How It Changed
+Replaced the asynchronous `useEffect` string slicing with a safe, synchronous fallback:
+```javascript
+export const ReviewCard = ({ img, name, username, body, description }) => {
+    const text = typeof body === "string" ? body : typeof description === "string" ? description : "";
+    const formattedPreview = text ? text.slice(0, 50) : "";
+```
+
+### Where It Changed
+- File: [`components/Departments.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Departments.jsx#L14-L20) (lines 14–20)
+
+### How It Affected the Website
+- Completely eliminated the red runtime error overlay. The marquee cards render immediately with proper preview descriptions.
+
+---
+
+## 11. CSS Language Service `@tailwind` Warning (`.vscode/settings.json`)
+
+### What Changed
+Created [`.vscode/settings.json`](file:///c:/Users/saksh/Desktop/gdg/.vscode/settings.json) to configure editor CSS linting and file associations.
+
+### Why It Changed
+The editor's built-in CSS language service flagged `@tailwind base;`, `@tailwind components;`, `@layer`, and `@apply` with squiggly warnings (`Unknown at rule @tailwind (unknownAtRules)`) because it validates only standard W3C CSS specifications by default.
+
+### How It Changed
+Configured workspace settings to ignore unknown at-rules and bind CSS files to the Tailwind CSS language mode:
+```json
+{
+  "css.lint.unknownAtRules": "ignore",
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
+}
+```
+
+### Where It Changed
+- File: [`.vscode/settings.json`](file:///c:/Users/saksh/Desktop/gdg/.vscode/settings.json) (lines 1–6)
+
+### How It Affected the Website
+- Silenced false-positive syntax warnings in [`app/globals.css`](file:///c:/Users/saksh/Desktop/gdg/app/globals.css) and enabled proper editor Tailwind IntelliSense.
+
+---
+
+## 12. Modal Flickering on Cursor Move (`app/page.jsx`)
+
+### What Changed
+Eliminated synthetic `mousemove` state updates that re-rendered `Home` on every pixel of cursor movement, and un-nested `PopupComp` from an inline component declaration.
+
+### Why It Changed
+1. `app/page.jsx` had a `mousemove` event listener that invoked `setCursorCoordinates` on every single mouse event, triggering 60–120 full component re-renders per second while moving the mouse.
+2. The modal wrapper (`NoticeDialogContainer`) was declared *inside* the body of `Home`. Because component declarations inside render functions produce a brand-new function identity on every render, React treated it as a new component type, constantly unmounting and remounting the modal.
+3. This caused the Radix `Dialog` to continuously reopen, close, and re-animate while moving the cursor across the screen, stopping only when the cursor stopped or after clicking "Understood".
+
+### How It Changed
+1. Removed the unnecessary `mousemove` and `scroll` listener state updates from `app/page.jsx`.
+2. Defined `popupConfig` as a stable constant outside the component.
+3. Rendered `<PopupComp>` directly at the top level instead of wrapping it inside an inline nested component function.
+
+### Where It Changed
+- File: [`app/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/page.jsx#L10-L65) (lines 10–65)
+
+### How It Affected the Website
+- The modal dialog remains rock-solid and stable with zero flickering or glitching during cursor movements.
+- Clicking the "Understood" button dismisses the modal cleanly and permanently for the session.
+
+---
+
 ## Summary of Files Modified
 
 | File | Change Type | Primary Impact |
@@ -241,9 +316,10 @@ Originally contained only bare `<hr />` and `<p>` tags with raw text links separ
 | [`components/UserButton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/UserButton.jsx) | Modify | Reconnected Shadcn `DropdownMenu`, `Avatar`, and user initials |
 | [`components/PopupComp.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/PopupComp.jsx) | Modify | Reconnected Shadcn `Dialog` with accessible modal and action button |
 | [`components/Hero.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Hero.jsx) | Modify | High-impact hero section with gradient typography, badges, and cards |
-| [`app/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/page.jsx) | Modify | Integrated Hero, Dialog, and animated Departments Marquee showcase |
-| [`components/Departments.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Departments.jsx) | Modify | Fixed undefined `body` slice bug; linked marquee items to `/departments` |
+| [`app/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/page.jsx) | Modify | Fixed modal flickering; removed synthetic mousemove re-renders; added Marquee |
+| [`components/Departments.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Departments.jsx) | Modify | Fixed undefined `body` slice bug; safe preview string; linked cards |
 | [`app/(pages)/departments/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/departments/page.jsx) | Modify | Responsive domain selection grid with icons, badges, and counter |
 | [`app/auth/signin/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signin/page.jsx) | Modify | Centered auth Card with sign-in/sign-up tab switcher and styled inputs |
 | [`components/GDGLoader.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/GDGLoader.jsx) | Modify | Modern loading state with brand icon pulse animation |
 | [`components/Footer.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Footer.jsx) | Modify | 3-column footer with social links, navigation, and copyright |
+| [`.vscode/settings.json`](file:///c:/Users/saksh/Desktop/gdg/.vscode/settings.json) | New | Configured CSS unknownAtRules and Tailwind file associations |
