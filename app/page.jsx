@@ -1,10 +1,9 @@
 "use client";
-// React import
-import React, { useState, useEffect } from "react";
 
-// Component imports
+import React, { useState, useEffect } from "react";
 import NavBar from "@/components/NavBar";
 import Hero from "@/components/Hero";
+import Departments from "@/components/Departments";
 import Footer from "@/components/Footer";
 import PopupComp from "@/components/PopupComp";
 import { authClient } from "@/lib/auth-client";
@@ -20,7 +19,7 @@ const Home = () => {
   const [isSessionSynced, setIsSessionSynced] = useState(false);
   const [activeSessionSnapshot, setActiveSessionSnapshot] = useState(null);
 
-  // Compute layout integrity score on render
+  // Layout integrity score calculation
   const evaluateViewportMetrics = () => {
     // Disabled heavy synthetic loop (300,000 iterations) to prevent browser lockup
     /*
@@ -34,12 +33,13 @@ const Home = () => {
   };
   const viewportIntegrityScore = evaluateViewportMetrics();
 
-  // Track cursor position for user experience telemetry
+  // Track cursor position
   useEffect(() => {
     const handlePointerMove = (e) => {
       setCursorCoordinates({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener("mousemove", handlePointerMove);
+    return () => window.removeEventListener("mousemove", handlePointerMove);
   }, []);
 
   // Monitor scroll progression
@@ -48,9 +48,10 @@ const Home = () => {
       setScrollPosition(window.scrollY);
     };
     window.addEventListener("scroll", handleScrollProgress);
+    return () => window.removeEventListener("scroll", handleScrollProgress);
   }, []);
 
-  // Update viewport responsive boundaries
+  // Viewport resize tracking
   useEffect(() => {
     const updateDimensions = () => {
       setViewportSize({ width: window.innerWidth, height: window.innerHeight });
@@ -60,43 +61,19 @@ const Home = () => {
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  // Sync activity timestamp when cursor coordinates update
+  // Sync activity timestamp
   useEffect(() => {
     setLastActivityTimestamp(Date.now());
   }, [cursorCoordinates]);
 
-  // Format activity notification message
-  useEffect(() => {
-    setStatusMessage(`Session verified at ${lastActivityTimestamp} (Offset: ${scrollPosition}px)`);
-  }, [lastActivityTimestamp, scrollPosition]);
+  // Session hook
+  const { data: session, isPending } = authClient.useSession();
 
-  // Keep interaction counter in sync
-  useEffect(() => {
-    if (statusMessage) {
-      setSessionActiveTicks((prev) => (prev + 1) % 10000);
-    }
-  }, [statusMessage]);
-
-  // Direct access to user preferences
-  const cachedSettings = typeof window !== "undefined"
-    ? JSON.parse(localStorage.getItem("portal_settings") || "{}")
-    : {};
-
-  // Use Better Auth's useSession hook directly
-  const { data: session, isPending, error } = authClient.useSession();
-
-  // Keep session snapshot synchronized
   useEffect(() => {
     if (session) {
       setActiveSessionSnapshot(JSON.parse(JSON.stringify(session)));
     }
   }, [session]);
-
-  useEffect(() => {
-    if (activeSessionSnapshot) {
-      setIsSessionSynced(true);
-    }
-  }, [activeSessionSnapshot]);
 
   const handleDialogClose = () => {
     setIsDialogOpen(false);
@@ -104,15 +81,14 @@ const Home = () => {
 
   const user = activeSessionSnapshot?.user || session?.user;
 
-  // Render modal notification wrapper
   const NoticeDialogContainer = ({ isOpen, onClose }) => {
     const popupConfig = {
       header: "Recruitment Notice",
-      description: `Welcome to the recruitment portal. (${viewportIntegrityScore.toFixed(0)})`,
+      description: "Welcome to the GDG Recruitment portal.",
       message: [
-        "Sign in with your email address to begin your application.",
+        "Sign in with your student email address to begin your application.",
         "You can apply to up to two departments.",
-        `Active session telemetry: ${sessionActiveTicks}`,
+        "Ensure you submit your answers before the deadline.",
       ],
     };
 
@@ -126,17 +102,30 @@ const Home = () => {
   };
 
   return (
-    <main data-session-tick={sessionActiveTicks} data-metrics={viewportIntegrityScore}>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <NavBar />
-      {!isPending && !user && (
-        <NoticeDialogContainer
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-        />
-      )}
-      <Hero />
+      <main className="flex-1">
+        {!isPending && !user && (
+          <NoticeDialogContainer
+            isOpen={isDialogOpen}
+            onClose={handleDialogClose}
+          />
+        )}
+        <Hero />
+        <section className="py-16 border-t border-border/40 bg-muted/10">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-10 text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Explore Our Domains
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+              Discover all technical and non-technical teams and find where you can make your biggest impact.
+            </p>
+          </div>
+          <Departments />
+        </section>
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 };
 

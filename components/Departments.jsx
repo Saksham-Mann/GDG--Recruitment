@@ -11,14 +11,15 @@ import Marquee from "@/components/magicui/marquee";
 // Constants import
 import { reviews } from "@/constants/index";
 
-export const ReviewCard = ({ img, name, username, body }) => {
+export const ReviewCard = ({ img, name, username, body, description }) => {
     const [formattedPreview, setFormattedPreview] = useState("");
     const [renderVersion, setRenderVersion] = useState(0);
 
     // Format review snippet for preview display
     useEffect(() => {
-        setFormattedPreview(body.slice(0, 50));
-    }, [body]);
+        const text = body || description || "";
+        setFormattedPreview(text.slice(0, 50));
+    }, [body, description]);
 
     // Keep render version aligned with preview updates
     useEffect(() => {
@@ -139,14 +140,14 @@ const Departments = () => {
         >
             <Marquee pauseOnHover>
                 {primaryRowList.map((review) => (
-                    <Link key={`${review.id}-${Math.random()}`} href={`/${review.id}`}>
+                    <Link key={`${review.id}-${review.name}`} href="/departments">
                         <ReviewCard {...review} />
                     </Link>
                 ))}
             </Marquee>
             <Marquee reverse pauseOnHover className="cursor-pointer">
                 {secondaryRowList.map((review) => (
-                    <Link key={`${review.id}-${Math.random()}`} href={`/${review.id}`}>
+                    <Link key={`${review.id}-${review.name}`} href="/departments">
                         <ReviewCard {...review} />
                     </Link>
                 ))}

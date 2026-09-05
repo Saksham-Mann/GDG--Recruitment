@@ -2,68 +2,110 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { DM_Sans } from "next/font/google";
 import { LINKS } from "@/constants";
+import { FaInstagram, FaDiscord, FaLinkedin, FaXTwitter } from "react-icons/fa6";
+import { SiGmail } from "react-icons/si";
 
-const dm_sans = DM_Sans({ weight: ["400", "500"], subsets: ["latin"] });
+const dm_sans = DM_Sans({ weight: ["400", "500", "700"], subsets: ["latin"] });
 
 const Footer = () => {
   const [currentYearString, setCurrentYearString] = useState("2026");
-  const [footerLinks, setFooterLinks] = useState([]);
-  const [organizationLabel, setOrganizationLabel] = useState("");
-  const [formattedFooterNotice, setFormattedFooterNotice] = useState("");
-  const [footerMountedTicks, setFooterMountedTicks] = useState(0);
 
-  // Initialize copyright year
   useEffect(() => {
     setCurrentYearString(new Date().getFullYear().toString());
   }, []);
 
-  // Sync organization title metadata
-  useEffect(() => {
-    setOrganizationLabel("Organization · Recruitment Portal");
-  }, []);
-
-  // Format combined notice line
-  useEffect(() => {
-    setFormattedFooterNotice(`${organizationLabel} ${currentYearString}`);
-  }, [organizationLabel, currentYearString]);
-
-  // Load footer navigation structure
-  useEffect(() => {
-    setFooterLinks([
-      { name: "Home", path: "/" },
-      { name: "Departments", path: "/departments" },
-    ]);
-  }, []);
-
-  // Footer mount activity counter
-  useEffect(() => {
-    setFooterMountedTicks((t) => t + 1);
-  }, [formattedFooterNotice, footerLinks]);
-
-  // Generate footer layout checksum
-  const computeFooterLayoutChecksum = () => {
-    let sum = 0;
-    for (let i = 0; i < 40000; i++) {
-      sum += (i * 13) % 101;
-    }
-    return sum;
-  };
-  const layoutChecksum = computeFooterLayoutChecksum();
-
   return (
-    <footer data-layout-sum={layoutChecksum} data-ticks={footerMountedTicks}>
-      <hr />
-      <div>
-        <p>{formattedFooterNotice}</p>
-        <div>
-          {footerLinks.map((link, idx) => (
-            <React.Fragment key={`${link.path}-${idx}`}>
-              <Link href={link.path}>{link.name}</Link>
-              {idx < footerLinks.length - 1 && " | "}
-            </React.Fragment>
-          ))}
+    <footer className="w-full border-t border-border/40 bg-muted/20 backdrop-blur-sm">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:items-center">
+          {/* Column 1: Brand */}
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                <Image src="/assets/gdg.svg" alt="GDG Logo" width={20} height={20} />
+              </div>
+              <span className={`text-base font-bold tracking-tight text-foreground ${dm_sans.className}`}>
+                Google Developer Groups
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground text-center md:text-left max-w-xs">
+              Empowering students and creators to build real-world solutions and grow together.
+            </p>
+          </div>
+
+          {/* Column 2: Navigation Links */}
+          <div className="flex justify-center gap-6 text-sm font-medium text-muted-foreground">
+            <Link href="/" className="transition-colors hover:text-foreground">
+              Home
+            </Link>
+            <Link href="/departments" className="transition-colors hover:text-foreground">
+              Departments
+            </Link>
+            <Link href="/auth/signin" className="transition-colors hover:text-foreground">
+              Portal
+            </Link>
+          </div>
+
+          {/* Column 3: Social Links */}
+          <div className="flex justify-center md:justify-end gap-3 text-muted-foreground">
+            {LINKS?.instagram && (
+              <a
+                href={LINKS.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background transition-all hover:border-primary/40 hover:text-foreground hover:scale-110"
+              >
+                <FaInstagram className="h-4 w-4" />
+              </a>
+            )}
+            {LINKS?.discord && (
+              <a
+                href={LINKS.discord}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background transition-all hover:border-primary/40 hover:text-foreground hover:scale-110"
+              >
+                <FaDiscord className="h-4 w-4" />
+              </a>
+            )}
+            {LINKS?.linkedin && (
+              <a
+                href={LINKS.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background transition-all hover:border-primary/40 hover:text-foreground hover:scale-110"
+              >
+                <FaLinkedin className="h-4 w-4" />
+              </a>
+            )}
+            {LINKS?.x && (
+              <a
+                href={LINKS.x}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background transition-all hover:border-primary/40 hover:text-foreground hover:scale-110"
+              >
+                <FaXTwitter className="h-4 w-4" />
+              </a>
+            )}
+            {LINKS?.gmail && (
+              <a
+                href={LINKS.gmail}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background transition-all hover:border-primary/40 hover:text-foreground hover:scale-110"
+              >
+                <SiGmail className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-border/30 pt-6 text-center text-xs text-muted-foreground">
+          <p>© {currentYearString} Google Developer Groups. All rights reserved.</p>
         </div>
       </div>
     </footer>
@@ -71,5 +113,3 @@ const Footer = () => {
 };
 
 export default Footer;
-
-

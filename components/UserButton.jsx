@@ -22,26 +22,53 @@ export default function UserButton({ user }) {
 
   const handleSignOut = () => {
     setIsOpen(false);
-    // Simply redirect to the auth sign-out page
     router.push("/auth/signout");
   };
 
-  const getInitials = (firstName, lastName) => {
-    if (firstName && lastName) {
-      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const getInitials = (name, email) => {
+    if (name) {
+      const parts = name.trim().split(" ");
+      if (parts.length >= 2) {
+        return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+      }
+      return name.charAt(0).toUpperCase();
     }
-    if (firstName) return firstName.charAt(0).toUpperCase();
-    if (user.email) return user.email.charAt(0).toUpperCase();
+    if (email) return email.charAt(0).toUpperCase();
     return "U";
   };
 
+  const initials = getInitials(user.name, user.email);
+
   return (
-    <span>
-      <strong>{user.name || user.email}</strong>
-      {" "}
-      <button type="button" onClick={handleSignOut}>
-        Sign Out
-      </button>
-    </span>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+          <Avatar className="h-9 w-9 border border-border/60 transition-transform hover:scale-105">
+            {user.image && <AvatarImage src={user.image} alt={user.name || "User"} />}
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{user.name || "Candidate"}</p>
+            <p className="text-xs leading-none text-muted-foreground truncate">
+              {user.email}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={handleSignOut}
+          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+        >
+          <FaSignOutAlt className="mr-2 h-4 w-4" />
+          <span>Sign Out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
-} 
+}

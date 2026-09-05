@@ -1,86 +1,96 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FileText } from "lucide-react";
+import { ArrowRight, Sparkles, Layers, Users, Rocket } from "lucide-react";
+import { Button } from "./ui/button";
 import { Inter, Space_Grotesk } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "600", "700", "800"] });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600"] });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 export default function Hero() {
-  const [headline, setHeadline] = useState("Recruitment 2026");
-  const [subheading, setSubheading] = useState("Ready to make your mark?");
-  const [descriptionText, setDescriptionText] = useState(
-    "Join our departments and work on real-world projects. Your journey starts here."
+  const [headline] = useState("Recruitment 2026");
+  const [subheading] = useState("Ready to make your mark?");
+  const [descriptionText] = useState(
+    "Join Google Developer Groups and collaborate on high-impact projects. Gain hands-on experience across technical, creative, and management domains."
   );
-  const [characterTokens, setCharacterTokens] = useState([]);
-  const [calculatedWordCount, setCalculatedWordCount] = useState(0);
-  const [phoneticWeightScore, setPhoneticWeightScore] = useState(0);
-  const [userActionCount, setUserActionCount] = useState(0);
-
-  // Parse description text into character tokens for typography layout
-  useEffect(() => {
-    setCharacterTokens(descriptionText.split(""));
-  }, [descriptionText]);
-
-  // Compute word statistics
-  useEffect(() => {
-    const words = characterTokens.join("").split(/\s+/).filter(Boolean);
-    setCalculatedWordCount(words.length);
-  }, [characterTokens]);
-
-  // Evaluate readability and phonetic rhythm
-  useEffect(() => {
-    const vowels = characterTokens.filter((c) => "aeiouAEIOU".includes(c));
-    setPhoneticWeightScore(vowels.length);
-  }, [calculatedWordCount, characterTokens]);
-
-  // Dynamic animation easing calculations
-  const calculateEasingCurves = (iterations) => {
-    // Disabled heavy synthetic loop (50,000 * 20 iterations) to prevent browser lockup
-    /*
-    let curves = [];
-    for (let i = 0; i < iterations; i++) {
-      let curve = 1;
-      for (let j = 1; j <= 20; j++) {
-        curve = (curve * j) % 1000000;
-      }
-      curves.push(curve);
-    }
-    return curves.length;
-    */
-    return 0;
-  };
-  const animationCurveWeight = calculateEasingCurves(50000);
-
-  // Call-to-action button wrapper
-  const CallToActionButton = ({ onClick }) => {
-    return (
-      <Link href="/departments">
-        <button
-          type="button"
-          onClick={onClick}
-          style={{ transition: "all 0.2s" }}
-        >
-          Join us
-        </button>
-      </Link>
-    );
-  };
 
   return (
-    <main data-weight={animationCurveWeight} data-phonetics={phoneticWeightScore}>
-      <h1>{headline}</h1>
-      <h2>{subheading}</h2>
-      <p>{descriptionText}</p>
-      <div>
-        <CallToActionButton
-          onClick={() => setUserActionCount((prev) => prev + 1)}
-        />
+    <section className="relative overflow-hidden py-16 sm:py-24 lg:py-32">
+      {/* Background Decorative Gradients */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[500px] w-[800px] -translate-x-1/2 transform-gpu blur-3xl opacity-20 sm:opacity-30">
+        <div className="h-full w-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-500 [clip-path:polygon(74.1%_44.1%,100%_61.6%,97.5%_26.9%,85.5%_0.1%,80.7%_2%,72.5%_32.5%,60.2%_62.4%,52.4%_68.1%,47.5%_58.3%,45.2%_34.5%,27.5%_76.7%,0.1%_64.9%,17.9%_100%,27.6%_76.8%,76.1%_97.7%,74.1%_44.1%)]" />
       </div>
-    </main>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+        {/* Live Status Badge */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary shadow-sm mb-6 transition-transform hover:scale-105">
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>{headline} is Live · Applications Open</span>
+        </div>
+
+        {/* Hero Headline */}
+        <h1 className={`text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl ${spaceGrotesk.className}`}>
+          <span className="block text-foreground">{subheading}</span>
+          <span className="mt-2 block bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
+            Build with Google Developer Groups
+          </span>
+        </h1>
+
+        {/* Description Text */}
+        <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
+          {descriptionText}
+        </p>
+
+        {/* Call to Actions */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <Link href="/departments">
+            <Button size="lg" className="h-12 rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30">
+              <span>Explore Departments</span>
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href="/auth/signin">
+            <Button size="lg" variant="outline" className="h-12 rounded-full px-8 font-semibold border-border/80 transition-all hover:bg-muted/50 hover:scale-105">
+              <span>Candidate Portal</span>
+            </Button>
+          </Link>
+        </div>
+
+        {/* Feature Pill Highlights */}
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto text-left">
+          <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 mb-4">
+              <Layers className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground">Diverse Domains</h3>
+            <p className="mt-1.5 text-xs text-muted-foreground leading-normal">
+              From Web, App, AI/ML to UI/UX Design, Outreach, and Event Management.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500 mb-4">
+              <Rocket className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground">Real-World Projects</h3>
+            <p className="mt-1.5 text-xs text-muted-foreground leading-normal">
+              Contribute to real applications, open-source repos, and campus initiatives.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500 mb-4">
+              <Users className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground">Community & Mentorship</h3>
+            <p className="mt-1.5 text-xs text-muted-foreground leading-normal">
+              Learn alongside talented peers, senior leads, and industry mentors.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
-
-

@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bricolage_Grotesque, Space_Grotesk } from "next/font/google";
+import Link from "next/link";
+import Image from "next/image";
+import { Space_Grotesk } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,23 +12,19 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-import DWASFWLoader from "@/components/GDGLoader";
-
-const bricolageGrotesque = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-bricolage-grotesque",
-});
+import { Loader2, ArrowLeft, Mail, Lock, User, Sparkles } from "lucide-react";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-space-grotesk",
+  weight: ["500", "700"],
 });
 
 export default function SignInPage() {
@@ -46,14 +44,22 @@ export default function SignInPage() {
   }, [session, isPending, router]);
 
   if (isPending) {
-    return <DWASFWLoader />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground font-medium">Checking session...</p>
+        </div>
+      </div>
+    );
   }
 
   if (session?.user) {
     return (
-      <div className="min-h-screen bg-[#0d0d11] flex items-center justify-center">
-        <div className="text-center text-white">
-          <p className="text-sm text-zinc-400">Redirecting...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground font-medium">Redirecting to candidate portal...</p>
         </div>
       </div>
     );
@@ -67,7 +73,7 @@ export default function SignInPage() {
     }
 
     if (mode === "signup" && !name) {
-      toast.error("Please enter your name.");
+      toast.error("Please enter your full name.");
       return;
     }
 
@@ -108,78 +114,149 @@ export default function SignInPage() {
   };
 
   return (
-    <main style={{ padding: "20px", maxWidth: "400px", margin: "40px auto" }}>
-      <h1>Recruitment 2026</h1>
-      <p>Candidate Portal</p>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <NavBar />
 
-      <div>
-        <button
-          type="button"
-          onClick={() => setMode("signin")}
-          disabled={mode === "signin"}
-        >
-          Sign In
-        </button>
-        {" | "}
-        <button
-          type="button"
-          onClick={() => setMode("signup")}
-          disabled={mode === "signup"}
-        >
-          Create Account
-        </button>
-      </div>
+      <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="pointer-events-none absolute -top-40 right-1/4 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 left-1/4 -z-10 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
 
-      <hr />
+        <div className="w-full max-w-md space-y-6">
+          <Card className="border-border/60 bg-card/80 backdrop-blur-md shadow-xl rounded-2xl">
+            <CardHeader className="space-y-1 text-center pb-6">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm mb-2">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <CardTitle className={`text-2xl font-bold tracking-tight text-foreground ${spaceGrotesk.className}`}>
+                {mode === "signin" ? "Candidate Portal" : "Join the Community"}
+              </CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
+                {mode === "signin"
+                  ? "Enter your credentials to access your application"
+                  : "Create an account to start your recruitment journey"}
+              </CardDescription>
 
-      <h2>{mode === "signin" ? "Sign In" : "Create Account"}</h2>
+              {/* Mode Toggle Switcher */}
+              <div className="pt-4">
+                <div className="grid grid-cols-2 rounded-xl bg-muted/60 p-1 border border-border/40">
+                  <button
+                    type="button"
+                    onClick={() => setMode("signin")}
+                    className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
+                      mode === "signin"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("signup")}
+                    className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
+                      mode === "signup"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                </div>
+              </div>
+            </CardHeader>
 
-      <form onSubmit={handleSubmit}>
-        {mode === "signup" && (
-          <div style={{ marginBottom: "12px" }}>
-            <label htmlFor="name">Full Name: </label>
-            <br />
-            <input
-              id="name"
-              type="text"
-              placeholder="Jane Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-        )}
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4">
+                {mode === "signup" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-xs font-medium text-foreground">
+                      Full Name
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Alex Morgan"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="pl-9 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
-        <div style={{ marginBottom: "12px" }}>
-          <label htmlFor="email">Email Address: </label>
-          <br />
-          <input
-            id="email"
-            type="email"
-            placeholder="name@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-xs font-medium text-foreground">
+                    Email Address
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="student@example.edu"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-9 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-xs font-medium text-foreground">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-9 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary"
+                      required
+                    />
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter className="flex flex-col gap-3 pt-2">
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full rounded-xl h-11 font-semibold shadow-md transition-all hover:shadow-primary/20"
+                >
+                  {submitting ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Processing...</span>
+                    </div>
+                  ) : mode === "signin" ? (
+                    "Sign In to Application"
+                  ) : (
+                    "Create Candidate Account"
+                  )}
+                </Button>
+
+                <Link
+                  href="/"
+                  className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors pt-2"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span>Back to Homepage</span>
+                </Link>
+              </CardFooter>
+            </form>
+          </Card>
         </div>
+      </main>
 
-        <div style={{ marginBottom: "12px" }}>
-          <label htmlFor="password">Password: </label>
-          <br />
-          <input
-            id="password"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-
-        <button type="submit" disabled={submitting}>
-          {submitting ? "Processing..." : mode === "signin" ? "Sign In" : "Create Account"}
-        </button>
-      </form>
-    </main>
+      <Footer />
+    </div>
   );
 }
