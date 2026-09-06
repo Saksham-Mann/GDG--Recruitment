@@ -88,12 +88,9 @@ const NavBar = () => {
             </div>
           </div>
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className={`text-base font-bold tracking-tight text-foreground ${dm_sans.className}`}>
-                GDG Recruitment
-              </span>
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
+            <span className={`text-base font-bold tracking-tight text-foreground ${dm_sans.className}`}>
+              GDG Recruitment
+            </span>
             <span className="text-[11px] font-medium text-muted-foreground">
               VIT Chapter · 2026
             </span>

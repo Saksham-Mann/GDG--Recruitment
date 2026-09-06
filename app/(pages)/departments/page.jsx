@@ -117,14 +117,7 @@ const DepartmentsListPage = () => {
             {/* Selection Counter & CTA Button */}
             <div className="flex items-center gap-4 shrink-0">
               <div className="flex flex-col items-end">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">Selected</span>
-                  {selectedCount >= 2 && (
-                    <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
-                      Limit reached
-                    </span>
-                  )}
-                </div>
+                <span className="text-xs text-muted-foreground">Selected</span>
                 <span className="text-lg font-bold text-foreground">
                   <span className="text-primary">{selectedCount}</span> / 2
                 </span>

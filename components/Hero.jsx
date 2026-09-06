@@ -31,29 +31,24 @@ export default function Hero() {
         </div>
 
         {/* Hero Headline */}
-        <h1 className={`text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl ${spaceGrotesk.className}`}>
+        <h1 className={`text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl leading-tight sm:leading-[1.15] ${spaceGrotesk.className}`}>
           <span className="block text-foreground">{subheading}</span>
-          <span className="mt-2 block bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
+          <span className="mt-2 block bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent pb-3">
             Build with Google Developer Groups
           </span>
         </h1>
 
         {/* Description Text */}
-        <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
+        <p className="mx-auto mt-8 sm:mt-10 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
           {descriptionText}
         </p>
 
         {/* Call to Actions */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <div className="mt-10 flex items-center justify-center">
           <Link href="/departments">
             <Button size="lg" className="h-12 rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30">
               <span>Explore Departments</span>
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href="/auth/signin">
-            <Button size="lg" variant="outline" className="h-12 rounded-full px-8 font-semibold border-border/80 transition-all hover:bg-muted/50 hover:scale-105">
-              <span>Candidate Portal</span>
             </Button>
           </Link>
         </div>
