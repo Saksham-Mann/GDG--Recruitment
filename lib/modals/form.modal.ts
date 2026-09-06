@@ -6,13 +6,16 @@ export interface IFormData {
   Email: string;
   RegistrationNumber: string;
   Phone: string;
-  Pref: string;
+  Pref?: string;
   Department: string;
-  Questions: Record<string, string>;
+  Questions?: Record<string, string>;
   shortlisted?: boolean;
+  updatedAt?: Date;
+  createdAt?: Date;
 }
 
 const COLLECTION_NAME = "formData";
+const ALLOWED_UPDATE_FIELDS = ["shortlisted", "Pref", "updatedAt"];
 
 const formatDoc = (doc: any) => {
   const data = doc.data ? doc.data() : doc;
@@ -51,8 +54,13 @@ class FormDataModel {
     const db = await connect();
     let ref: any = db.collection(COLLECTION_NAME);
 
-    if (query.Email) ref = ref.where("Email", "==", query.Email);
-    if (query.Department) ref = ref.where("Department", "==", query.Department);
+    // Enforce string primitive checks to prevent NoSQL query operator injection
+    if (query.Email && typeof query.Email === "string") {
+      ref = ref.where("Email", "==", query.Email);
+    }
+    if (query.Department && typeof query.Department === "string") {
+      ref = ref.where("Department", "==", query.Department);
+    }
 
     const snapshot = await ref.get();
     return snapshot.docs.map((doc: any) => formatDoc(doc));
@@ -72,6 +80,8 @@ class FormDataModel {
     id: string,
     update: Partial<IFormData> | { $set?: Partial<IFormData> },
   ) {
+    if (!id || typeof id !== "string") return null;
+
     const db = await connect();
     const docRef = db.collection(COLLECTION_NAME).doc(id);
     const updateData =
@@ -79,12 +89,25 @@ class FormDataModel {
         ? update.$set
         : update;
 
-    await docRef.update(updateData ?? {});
+    // Strict whitelisting of updatable attributes to prevent arbitrary field injection
+    const sanitizedUpdate: Record<string, any> = {};
+    if (updateData && typeof updateData === "object") {
+      for (const key of ALLOWED_UPDATE_FIELDS) {
+        if (key in updateData) {
+          sanitizedUpdate[key] = (updateData as any)[key];
+        }
+      }
+    }
+    sanitizedUpdate.updatedAt = new Date();
+
+    await docRef.update(sanitizedUpdate);
     const snapshot = await docRef.get();
     return snapshot.exists ? formatDoc(snapshot) : null;
   }
 
   static async findById(id: string) {
+    if (!id || typeof id !== "string") return null;
+
     const db = await connect();
     const snapshot = await db.collection(COLLECTION_NAME).doc(id).get();
     return snapshot.exists ? formatDoc(snapshot) : null;
