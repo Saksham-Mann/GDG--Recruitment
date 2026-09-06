@@ -21,6 +21,9 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, Mail, Lock, User, Sparkles, Eye, EyeOff } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import AuthSkeleton from "@/components/skeletons/AuthSkeleton";
+import NavSkeleton from "@/components/skeletons/NavSkeleton";
+import FooterSkeleton from "@/components/skeletons/FooterSkeleton";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -60,11 +63,12 @@ function SignInContent() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground font-medium">Checking session...</p>
-        </div>
+      <div className="flex min-h-screen flex-col bg-background text-foreground animate-in fade-in duration-200">
+        <NavBar />
+        <main className="flex-1 flex items-center justify-center py-12">
+          <AuthSkeleton />
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -292,11 +296,12 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground font-medium">Loading auth portal...</p>
-          </div>
+        <div className="flex min-h-screen flex-col bg-background text-foreground animate-in fade-in duration-200">
+          <NavSkeleton />
+          <main className="flex-1 flex items-center justify-center py-12">
+            <AuthSkeleton />
+          </main>
+          <FooterSkeleton />
         </div>
       }
     >

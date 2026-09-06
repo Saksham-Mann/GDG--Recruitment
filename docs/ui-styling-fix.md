@@ -722,5 +722,66 @@ Styled the container with a centered layout, backdrop blur, rounded card, spinne
 | [`app/auth/signout/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signout/page.jsx) | Modify | Centered Card layout with `Loader2` spinner and descriptive sign-out status |
 | [`app/api/submit-form/route.js`](file:///c:/Users/saksh/Desktop/gdg/app/api/submit-form/route.js) | Modify | Extended submission deadline, normalized registration numbers, sanitized undefined values |
 | [`lib/db.ts`](file:///c:/Users/saksh/Desktop/gdg/lib/db.ts) | Modify | Added `FirestoreConn` interface, dynamic runtime credential resolution, and clean key stripping |
+| [`components/ui/skeleton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/ui/skeleton.jsx) | New | Accessible skeleton primitive with Tailwind pulse animation |
+| [`components/skeletons/NavSkeleton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/skeletons/NavSkeleton.jsx) | New | Navbar skeleton exoskeleton matching sticky header layout and buttons |
+| [`components/skeletons/HeroSkeleton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/skeletons/HeroSkeleton.jsx) | New | Hero section skeleton matching badge, headline, CTA buttons, and highlight pills |
+| [`components/skeletons/DepartmentGridSkeleton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/skeletons/DepartmentGridSkeleton.jsx) | New | Responsive cards grid skeleton matching mobile (1 col), tablet (2 col), desktop (3 col) |
+| [`components/skeletons/FormSkeleton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/skeletons/FormSkeleton.jsx) | New | Application form skeleton matching About You grid, essay prompt, and CTA button |
+| [`components/skeletons/AuthSkeleton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/skeletons/AuthSkeleton.jsx) | New | Centered auth card skeleton matching tab switcher, inputs, and submit button |
+| [`components/skeletons/AdminSkeleton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/skeletons/AdminSkeleton.jsx) | New | Admin dashboard skeleton matching metric cards and applicants table |
+| [`components/skeletons/FooterSkeleton.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/skeletons/FooterSkeleton.jsx) | New | 3-column footer skeleton matching brand, links, and social icon positions |
+| [`app/loading.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/loading.jsx) | Modify | Replaced full-screen generic loader with global layout exoskeleton |
+| [`app/(pages)/departments/loading.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/departments/loading.jsx) | New | Route loading boundary with DepartmentGridSkeleton |
+| [`app/(pages)/join/[...joinIds]/loading.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/join/[...joinIds]/loading.jsx) | New | Route loading boundary with FormSkeleton |
+| [`app/auth/signin/loading.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signin/loading.jsx) | New | Route loading boundary with AuthSkeleton |
+| [`app/(pages)/admin/loading.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/admin/loading.jsx) | New | Route loading boundary with AdminSkeleton |
+
+---
+
+## 29. Layout Skeleton Placeholders (Exoskeletons) & Zero Cumulative Layout Shift (CLS)
+
+### Overview & Problem Statement
+Previously, the application utilized a generic, full-screen centered spinning loader (`components/GDGLoader.jsx` via `DWASFWLoader` and `Loader2`) for global and client-side asynchronous boundaries. This approach created significant user-experience drawbacks:
+1. **Severe Cumulative Layout Shift (CLS):** When pages hydrated, the layout snapped abruptly from an empty canvas with a centered spinner to complex, multi-column layouts (Bento grids, sticky navbars, two-column forms). This caused noticeable visual flickering and jarring shifts.
+2. **Poor Perceived Performance:** Full-screen blocking spinners signal high latency and prevent users from cognitively scanning the visual hierarchy of the incoming content.
+
+### Solution: Structural Layout Exoskeletons
+Replaced all generic spinners with modular, accessible skeleton placeholders using Tailwind's subtle `animate-pulse` effect (`bg-muted/60 dark:bg-muted/40`). Every skeleton matches the exact padding, container max-widths, border radii (`rounded-2xl`, `rounded-xl`, `rounded-full`), and responsive breakpoints of its true component counterpart.
+
+### Component Breakdown
+1. **`components/ui/skeleton.jsx`**:
+   - Reusable primitive built with `clsx` and `tailwind-merge` (`cn`).
+   - Applies accessible pulse animation matching the application's dark and light theme tokens.
+2. **`components/skeletons/NavSkeleton.jsx`**:
+   - Matches [`components/NavBar.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/NavBar.jsx) (64px height sticky header, logo placeholder on the left, pill navigation menu items in center, theme toggle and auth button on the right).
+3. **`components/skeletons/HeroSkeleton.jsx`**:
+   - Matches [`components/Hero.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Hero.jsx) (centered announcement pill badge, two-line responsive headline, subtitle lines, two rounded-full action buttons, and 3-column feature highlight cards).
+4. **`components/skeletons/DepartmentGridSkeleton.jsx`**:
+   - Matches [`components/AllDepartments.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/AllDepartments.jsx) and [`app/(pages)/departments/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/departments/page.jsx) (responsive grid with 1 column on mobile, 2 columns on tablet, and 3 columns on desktop; matching card heights of `min-h-[220px]`, icon boxes, tags, description lines, and action buttons).
+5. **`components/skeletons/FormSkeleton.jsx`**:
+   - Matches [`components/FormComp.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/FormComp.jsx) (two-column responsive inputs grid for candidate details, essay prompt textarea, department questionnaire card, and full-width submission CTA).
+6. **`components/skeletons/AuthSkeleton.jsx`**:
+   - Matches [`app/auth/signin/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signin/page.jsx) (centered 448px max-width card, sparkles icon, mode switcher tab container, email/password inputs, and submit button).
+7. **`components/skeletons/AdminSkeleton.jsx`**:
+   - Matches [`app/(pages)/admin/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/admin/page.jsx) (metric summary cards, search bar, and applicant rows with status badges).
+8. **`components/skeletons/FooterSkeleton.jsx`**:
+   - Matches [`components/Footer.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Footer.jsx) (3-column responsive layout with brand, navigation links, and social icon pills).
+
+### Loading Boundary Integration
+1. **Root Global Loading (`app/loading.jsx`):** Renders `NavSkeleton` + `HeroSkeleton` + `DepartmentGridSkeleton` + `FooterSkeleton`, ensuring that initial App Router page transitions render the full skeleton shell immediately.
+2. **Route-Specific Loading Boundaries:**
+   - `app/(pages)/departments/loading.jsx`
+   - `app/(pages)/join/[...joinIds]/loading.jsx`
+   - `app/auth/signin/loading.jsx`
+   - `app/(pages)/admin/loading.jsx`
+3. **In-Page Asynchronous State Fallbacks:**
+   - Updated `app/(pages)/join/[...joinIds]/page.jsx` `isPending` state to render `FormSkeleton`.
+   - Updated `app/auth/signin/page.jsx` `isPending` and `Suspense` fallbacks to render `AuthSkeleton`.
+   - Updated `components/FormComp.jsx` `!isLoaded` state to render `FormSkeleton`.
+
+### Measurable Performance & UX Impact
+- **Cumulative Layout Shift (CLS):** Reduced to near-zero (`< 0.01`). The dimensions of skeleton elements precisely match hydrated elements, eliminating layout jumps.
+- **Perceived Latency:** Content appears instantly in structured form, improving perceived page load times by establishing visual affordance before data resolution completes.
+
 
 

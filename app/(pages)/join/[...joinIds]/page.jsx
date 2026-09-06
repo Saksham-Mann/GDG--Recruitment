@@ -10,6 +10,7 @@ import { reviews } from "@/constants/index";
 import NavBar from "@/components/NavBar";
 import FormComp from "@/components/FormComp";
 import Footer from "@/components/Footer";
+import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import { toast } from "sonner";
 import DWASFWLoader from "@/components/GDGLoader";
 import { authClient } from "@/lib/auth-client";
@@ -61,16 +62,13 @@ const JoinDepartmentPage = ({ params }) => {
   const user = session?.user;
   const isSignedIn = !!user;
 
-  // Show loading state while checking authentication
+  // Show layout skeleton while checking authentication
   if (isPending) {
     return (
-      <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <div className="flex min-h-screen flex-col bg-background text-foreground animate-in fade-in duration-200">
         <NavBar />
-        <main className="flex-1 flex items-center justify-center py-24">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-medium text-muted-foreground">Checking authentication...</p>
-          </div>
+        <main className="flex-1">
+          <FormSkeleton />
         </main>
         <Footer />
       </div>

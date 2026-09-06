@@ -21,6 +21,7 @@ import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import CountdownTimer from "./common/CountdownTimer";
 import { useSubmissions } from "@/components/SubmissionsProvider";
+import FormSkeleton from "@/components/skeletons/FormSkeleton";
 
 const normaliseQuestion = (question) => (
   typeof question === "string"
@@ -215,14 +216,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
 
   // Check if user is authenticated
   if (!isLoaded) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="text-center">
-          <span className="mx-auto mb-4 block h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-          <p className="text-white">Loading...</p>
-        </div>
-      </div>
-    );
+    return <FormSkeleton />;
   }
 
   if (!isSignedIn) {
