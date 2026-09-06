@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Space_Grotesk } from "next/font/google";
@@ -27,16 +27,30 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["500", "700"],
 });
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryMode = searchParams.get("mode");
+  const queryTab = searchParams.get("tab");
+  const initialMode = queryMode === "signup" || queryTab === "signup" ? "signup" : "signin";
+
   const { data: session, isPending } = authClient.useSession();
 
-  const [mode, setMode] = useState("signin"); // "signin" | "signup"
+  const [mode, setMode] = useState(initialMode); // "signin" | "signup"
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Sync mode if URL query parameter changes
+  useEffect(() => {
+    if (queryMode === "signup" || queryTab === "signup") {
+      setMode("signup");
+    } else if (queryMode === "signin" || queryTab === "signin") {
+      setMode("signin");
+    }
+  }, [queryMode, queryTab]);
 
   useEffect(() => {
     if (session?.user && !isPending) {
@@ -271,5 +285,22 @@ export default function SignInPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground font-medium">Loading auth portal...</p>
+          </div>
+        </div>
+      }
+    >
+      <SignInContent />
+    </Suspense>
   );
 }

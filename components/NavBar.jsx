@@ -136,11 +136,18 @@ const NavBar = () => {
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : !isAuthenticated ? (
-            <Link href="/auth/signin" className="hidden sm:inline-block">
-              <Button size="sm" className="rounded-full font-medium shadow-sm transition-all hover:shadow-primary/20">
-                Sign In
-              </Button>
-            </Link>
+            <div className="hidden sm:flex items-center gap-1.5">
+              <Link href="/auth/signin">
+                <Button variant="ghost" size="sm" className="rounded-full font-medium text-muted-foreground hover:text-foreground">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth/signin?mode=signup">
+                <Button size="sm" className="rounded-full font-medium shadow-sm transition-all hover:shadow-primary/20">
+                  Sign Up
+                </Button>
+              </Link>
+            </div>
           ) : (
             <UserButton user={session?.user} />
           )}
@@ -190,14 +197,23 @@ const NavBar = () => {
             ))}
 
             {!isAuthenticated && (
-              <div className="pt-2 border-t border-border/40 mt-1">
+              <div className="pt-2 border-t border-border/40 mt-1 flex flex-col gap-2">
                 <Link
                   href="/auth/signin"
                   onClick={() => setMobileDrawerOpen(false)}
                   className="w-full flex items-center justify-center"
                 >
-                  <Button className="w-full rounded-xl font-semibold shadow-md">
+                  <Button variant="outline" className="w-full rounded-xl font-semibold">
                     Sign In to Portal
+                  </Button>
+                </Link>
+                <Link
+                  href="/auth/signin?mode=signup"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className="w-full flex items-center justify-center"
+                >
+                  <Button className="w-full rounded-xl font-semibold shadow-md">
+                    Create Candidate Account
                   </Button>
                 </Link>
               </div>

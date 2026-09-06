@@ -46,6 +46,40 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/signup",
+        destination: "/auth/signin?mode=signup",
+        permanent: false,
+      },
+      {
+        source: "/sign-up",
+        destination: "/auth/signin?mode=signup",
+        permanent: false,
+      },
+      {
+        source: "/register",
+        destination: "/auth/signin?mode=signup",
+        permanent: false,
+      },
+      {
+        source: "/auth/signup",
+        destination: "/auth/signin?mode=signup",
+        permanent: false,
+      },
+      {
+        source: "/login",
+        destination: "/auth/signin",
+        permanent: false,
+      },
+      {
+        source: "/auth/login",
+        destination: "/auth/signin",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

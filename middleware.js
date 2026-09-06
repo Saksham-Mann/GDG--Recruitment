@@ -4,6 +4,22 @@ export function middleware(request) {
   const { pathname } = request.nextUrl;
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");
+
+  // Friendly redirects for common auth aliases
+  const lowerPath = pathname.toLowerCase();
+  const signupAliases = ["/signup", "/sign-up", "/register", "/auth/signup"];
+  if (signupAliases.includes(lowerPath)) {
+    const signupUrl = new URL("/auth/signin", request.url);
+    signupUrl.searchParams.set("mode", "signup");
+    return NextResponse.redirect(signupUrl);
+  }
+
+  const loginAliases = ["/login", "/auth/login"];
+  if (loginAliases.includes(lowerPath)) {
+    const loginUrl = new URL("/auth/signin", request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
   const allowedOrigins = [
     request.nextUrl.origin,
     process.env.BETTER_AUTH_URL,
