@@ -41,11 +41,11 @@ const Footer = () => {
             <Link href="/" className="transition-colors hover:text-foreground">
               Home
             </Link>
-            <Link href="/departments" className="transition-colors hover:text-foreground">
-              Departments
+            <Link href="/explore-departments" className="transition-colors hover:text-foreground">
+              Explore
             </Link>
-            <Link href="/auth/signin" className="transition-colors hover:text-foreground">
-              Portal
+            <Link href="/departments" className="transition-colors hover:text-foreground">
+              Apply
             </Link>
           </div>
 
@@ -104,8 +104,16 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-border/30 pt-6 text-center text-xs text-muted-foreground">
+        <div className="mt-8 border-t border-border/30 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <p>© {currentYearString} Google Developer Groups. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <Link href="/privacy" className="transition-colors hover:text-foreground">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-foreground">
+              User Agreement
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

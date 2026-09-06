@@ -281,4 +281,32 @@ export const metadata = {
 ```
 This configuration guarantees full compliance across modern browsers (Chrome, Safari, Firefox, Edge), iOS Safari home screen bookmarking, and legacy Windows/desktop shortcut handlers with zero default Next.js/Vercel triangle placeholders.
 
+---
+
+## 10. Legal Infrastructure, Privacy Governance & Data Transparency
+
+To align with modern data privacy principles, fair candidate recruitment practices, and institutional accountability, dedicated legal routes and explicit applicant consent mechanisms have been implemented across the portal.
+
+### 1. Dedicated Legal Routes
+- **Privacy Policy (`/privacy`)**:
+  - **File**: `app/(pages)/privacy/page.jsx`
+  - **Scope**: Explicitly enumerates candidate data collected (Registration Number, Full Legal Name, Email Address, WhatsApp Contact Number, Year of Study, Gender Preference, Department Preferences, and Written Questionnaire Answers).
+  - **Recruitment Purpose**: Clarifies that all candidate information is collected solely for internal evaluation, task review, and interview scheduling by verified Google Developer Groups (GDG) chapter leads. Data is never sold, licensed, or exposed to third-party advertisers.
+  - **Data Retention & Safeguards**: Specifies that records are encrypted in transit via TLS 1.3/HTTPS, stored in Google Cloud Firestore with role-based security rules, and purged or anonymized once the recruitment onboarding cycle concludes.
+  - **Third-Party Infrastructure**: Documents third-party dependencies, including Google OAuth for identity management and Firebase/GCP for database operations.
+
+- **User Agreement & Code of Conduct (`/terms`)**:
+  - **File**: `app/(pages)/terms/page.jsx`
+  - **Scope**: Establishes applicant terms of participation, eligibility, and submission integrity.
+  - **Originality & Accuracy**: Applicants certify that all submitted project links, design portfolios, and questionnaire responses represent their authentic, original intellectual work. Plagiarism, impersonation, or misrepresentation results in immediate disqualification.
+  - **Acceptable Use & Anti-Tampering**: Strictly prohibits automated scraping, parallel bot submissions, spamming, cross-site request forgery, and payload injection attempts.
+  - **Selection Discretion**: Affirms that application submission does not guarantee admission and that evaluation outcomes made by the GDG review panel are final and binding.
+
+### 2. Form-Level Consent & Global Integration
+- **Global Footer (`components/Footer.jsx`)**: Integrated permanent, accessible footer navigation links to both `/privacy` and `/terms` alongside updated site navigation (`Home`, `Explore`, `Apply`).
+- **Recruitment Form Consent (`components/FormComp.jsx`)**: Placed an active consent notice directly adjacent to the primary submit button:
+  > *"By submitting, you agree to our User Agreement and acknowledge our Privacy Policy."*
+- **Confirmation Modal Safeguard**: Integrated applicant certification into the pre-flight confirmation dialog, ensuring affirmative candidate consent prior to database persistence.
+
+
 

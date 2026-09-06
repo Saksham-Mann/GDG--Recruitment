@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Space_Grotesk } from "next/font/google";
 import NavBar from "@/components/NavBar";
@@ -355,15 +356,16 @@ const DepartmentsContent = () => {
                   Need help deciding? You can review all domain requirements and portfolios before proceeding.
                 </span>
               </div>
-              <Button
-                size="default"
-                onClick={goToApplication}
-                disabled={isContinueDisabled}
-                className="rounded-full px-6 shrink-0 font-medium shadow-sm disabled:opacity-50"
-              >
-                <span>Continue to Application</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <Link href="/explore-departments">
+                <Button
+                  size="default"
+                  variant="outline"
+                  className="rounded-full px-6 shrink-0 font-medium shadow-sm hover:bg-muted/80"
+                >
+                  <span>Explore Departments</span>
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           )}
         </div>

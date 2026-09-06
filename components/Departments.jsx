@@ -37,9 +37,11 @@ export const ReviewCard = ({ img, name, username, body, description }) => {
                     <figcaption className="text-sm font-medium dark:text-white">
                         {name}
                     </figcaption>
-                    <p className="text-xs font-medium dark:text-white/40">
-                        {username}
-                    </p>
+                    {username && (
+                        <p className="text-xs font-medium dark:text-white/40">
+                            {username}
+                        </p>
+                    )}
                 </div>
             </div>
             <blockquote className="mt-2 text-sm">
@@ -76,7 +78,6 @@ const Departments = () => {
         setCoreDevelopmentRecord({
             id: "development",
             name: "Development",
-            username: "Heads : Rudresh & Gaurav",
             body: "Creating and maintaining applications, involving frontend, backend, and database management",
             img: "",
             invite: "#",

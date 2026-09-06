@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import * as z from "zod";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -650,33 +651,46 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 <span>{submitError}</span>
               </div>
             )}
-            <div className="flex items-center justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/departments")}
-                className="rounded-full px-6 font-medium"
-              >
-                Change Departments
-              </Button>
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isSubmitting}
-                className="rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>Submitting Application...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Submit Application</span>
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+              <p className="text-xs text-muted-foreground text-center sm:text-left max-w-md leading-normal">
+                By submitting, you agree to our{" "}
+                <Link href="/terms" target="_blank" className="text-primary font-medium underline hover:text-primary/80 transition-colors">
+                  User Agreement
+                </Link>{" "}
+                and acknowledge our{" "}
+                <Link href="/privacy" target="_blank" className="text-primary font-medium underline hover:text-primary/80 transition-colors">
+                  Privacy Policy
+                </Link>.
+              </p>
+
+              <div className="flex items-center justify-end gap-3 w-full sm:w-auto shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/departments")}
+                  className="rounded-full px-6 font-medium"
+                >
+                  Change Departments
+                </Button>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span>Submitting Application...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Submit Application</span>
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </form>
@@ -711,6 +725,12 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 </span>
               ))}
             </div>
+            <p className="text-[11px] text-muted-foreground pt-1">
+              By confirming, you certify that all answers and links are truthful, original, and comply with our{" "}
+              <Link href="/terms" target="_blank" className="text-primary underline hover:text-primary/80">
+                User Agreement
+              </Link>.
+            </p>
           </div>
 
           <DialogFooter className="flex flex-row items-center justify-end gap-2 pt-2">
