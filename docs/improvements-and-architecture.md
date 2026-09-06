@@ -169,3 +169,61 @@ When a candidate applies to multiple departments (up to the system maximum of 2)
 - **Role Verification**: Admin routes enforce Firebase admin claim checks or email whitelist validation.
 - **Client/Server Integrity**: All status mutations are sanitized and verified server-side.
 - **No Cumulative Layout Shift (CLS)**: Skeleton loaders mirror final component proportions during authentication and data fetching cycles.
+
+---
+
+## 6. Decoupled Department Discovery & Application Architecture
+
+### The UX Problem: Premature Commitment & Cognitive Friction
+In the previous architecture, clicking "Explore Departments" on the homepage funnelled visitors directly into the transactional application flow (`/departments`), where users were immediately confronted with selection limits, domain checkboxes, and questionnaire submission prompts.
+
+This created significant user experience friction:
+1. **Premature Commitment**: Visitors seeking to simply learn what GDG does (e.g. what kind of web projects they build, what game engines they use, or what the culture is like) were forced into an application context before feeling ready or informed.
+2. **Cognitive Overload**: Candidates had to make binding department choices without visibility into team charters, tech stacks, or project scopes.
+3. **Loss of Browsing Context**: Without a dedicated informational showcase, users had no low-friction mechanism to evaluate all 12 domains side-by-side.
+
+### The Architectural Solution: Decoupled Discovery from Transactional Submission
+To eliminate this friction, the architecture decouples informational browsing from transactional submission into two dedicated, cooperative paths:
+
+```
+                          [ Homepage Hero ]
+                         /                 \
+       (Left: Secondary) /                   \ (Right: Primary)
+    "Explore Departments"                     "Apply Now"
+             v                                     v
+   [/explore-departments]                     [/departments]
+   - Informational showcase                   - Active domain selection
+   - 12 department cards + stock photos       - Up to 2 domains
+   - In-depth modal dossier                   - Direct path to questionnaire
+   - Low-commitment exploration               - Step 01 of transaction
+             |
+             +---> "Select Domain" / "Proceed to Apply"
+                         |
+                         v
+              [/departments?selected=...]
+              - Carries over pre-selected domains
+              - Smooth, uninterrupted onboarding
+```
+
+1. **Informational Route (`/explore-departments`)**:
+   - Focuses purely on discovery, education, and inspiration.
+   - Features rich local stock photography (`public/assets/images/departments/*.png`) for all 12 club domains.
+   - Each card provides a high-level overview, tone accents, and tech stack chips.
+   - Includes a persistent, floating glassmorphic navigation pill with two permanent anchors:
+     - **Left Anchor**: "Back to Home" (clear arrow icon + return navigation).
+     - **Right Anchor**: "Proceed to Apply" (primary CTA carrying over pre-selected domains to `/departments?selected=...`).
+2. **Transactional Route (`/departments`)**:
+   - Preserves the fast, direct application flow for returning or decisive applicants.
+   - Automatically ingests pre-selected domains from `searchParams` (`?selected=Web Dev,Design`), initializing candidate selections without requiring redundant clicks.
+   - Encapsulated within a React `<Suspense>` boundary backed by `DepartmentGridSkeleton` to guarantee zero SSR de-optimizations and instant perceived load times.
+
+### Accessibility & Interaction Design Decisions: Click-to-View vs. Hover States
+1. **Mobile Touch Parity**: Hover triggers fail on mobile devices and touch screens, resulting in awkward double-tap behavior, erratic tooltips, or completely inaccessible secondary content. Explicit click-to-view (`onClick` / `onTouchEnd`) guarantees an identical, predictable experience across mobile, tablet, and desktop viewports.
+2. **Keyboard Accessibility & Screen Readers**:
+   - Every department card is configured with `role="button"`, `tabIndex={0}`, descriptive `aria-label`, and `aria-haspopup="dialog"`.
+   - Card expansion is triggered via `Enter` and `Space` keyboard events.
+   - The detailed dossier is rendered inside a Radix UI `Dialog` portal. This provides automated focus trapping, `Escape` key dismissal, ARIA modal attributes (`role="dialog"`, `aria-modal="true"`), and automatic focus restoration upon closing.
+3. **Zero Cumulative Layout Shift (CLS)**:
+   - Rather than expanding cards in-place (which pushes neighboring grid items down and triggers noticeable layout shifts), clicking a card opens an overlay modal dialog outside the document flow.
+   - Surrounding cards maintain fixed geometry, aspect ratios, and padding, maintaining a 0.00 CLS score.
+

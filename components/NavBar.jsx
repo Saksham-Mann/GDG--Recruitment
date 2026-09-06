@@ -7,7 +7,7 @@ import UserButton from "./UserButton";
 import ThemeToggle from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { authClient } from "@/lib/auth-client";
-import { Loader2, Clock, ShieldCheck, Menu, X, ChevronRight, Home, Layers } from "lucide-react";
+import { Loader2, Clock, ShieldCheck, Menu, X, ChevronRight, Home, Layers, Compass } from "lucide-react";
 import { DM_Sans } from "next/font/google";
 
 const dm_sans = DM_Sans({ weight: ["400", "500", "700"], subsets: ["latin"] });
@@ -54,7 +54,8 @@ const NavBar = () => {
 
   useEffect(() => {
     const baseItems = [
-      { label: "Departments", href: "/departments", icon: Layers },
+      { label: "Explore", href: "/explore-departments", icon: Compass },
+      { label: "Apply Now", href: "/departments", icon: Layers },
     ];
     if (isAuthenticated && hasAdminPermissions) {
       baseItems.push({ label: "Admin Panel", href: "/admin", icon: ShieldCheck });

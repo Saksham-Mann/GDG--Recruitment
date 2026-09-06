@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Layers, Users, Rocket } from "lucide-react";
+import { ArrowRight, Sparkles, Layers, Users, Rocket, Compass } from "lucide-react";
 import { Button } from "./ui/button";
 import { Inter, Space_Grotesk } from "next/font/google";
 
@@ -43,11 +43,25 @@ export default function Hero() {
           {descriptionText}
         </p>
 
-        {/* Call to Actions */}
-        <div className="mt-10 flex items-center justify-center">
-          <Link href="/departments">
-            <Button size="lg" className="h-12 rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30">
+        {/* Call to Actions (Explore on Left, Apply Now on Right) */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link href="/explore-departments" className="w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto h-12 rounded-full px-8 font-semibold border-border/80 bg-background/60 hover:bg-muted/60 transition-all hover:scale-105 shadow-xs"
+            >
+              <Compass className="mr-2 h-4 w-4 text-primary" />
               <span>Explore Departments</span>
+            </Button>
+          </Link>
+
+          <Link href="/departments" className="w-full sm:w-auto">
+            <Button
+              size="lg"
+              className="w-full sm:w-auto h-12 rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30"
+            >
+              <span>Apply Now</span>
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>

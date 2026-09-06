@@ -128,14 +128,14 @@ const Departments = () => {
         >
             <Marquee pauseOnHover>
                 {primaryRowList.map((review) => (
-                    <Link key={`${review.id}-${review.name}`} href="/departments">
+                    <Link key={`${review.id}-${review.name}`} href="/explore-departments">
                         <ReviewCard {...review} />
                     </Link>
                 ))}
             </Marquee>
             <Marquee reverse pauseOnHover className="cursor-pointer">
                 {secondaryRowList.map((review) => (
-                    <Link key={`${review.id}-${review.name}`} href="/departments">
+                    <Link key={`${review.id}-${review.name}`} href="/explore-departments">
                         <ReviewCard {...review} />
                     </Link>
                 ))}

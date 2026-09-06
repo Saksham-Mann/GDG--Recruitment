@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import Hero from "@/components/Hero";
 import Departments from "@/components/Departments";
@@ -8,6 +9,8 @@ import Footer from "@/components/Footer";
 import PopupComp from "@/components/PopupComp";
 import { authClient } from "@/lib/auth-client";
 import CandidateStatusCard from "@/components/CandidateStatusCard";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 const popupConfig = {
   header: "Recruitment Notice",
@@ -114,6 +117,14 @@ const Home = () => {
             <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
               Discover all technical and non-technical teams and find where you can make your biggest impact.
             </p>
+            <div className="mt-6 flex items-center justify-center">
+              <Link href="/explore-departments">
+                <Button variant="outline" size="sm" className="rounded-full px-5 font-semibold text-xs border-border/80 hover:border-primary/50 transition-all hover:scale-105 shadow-xs">
+                  <span>Browse All 12 Domains with Full Details</span>
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
           </div>
           <Departments />
         </section>

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Space_Grotesk } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useSubmissions } from "@/components/SubmissionsProvider";
 import { authClient } from "@/lib/auth-client";
 import CandidateStatusCard from "@/components/CandidateStatusCard";
+import DepartmentGridSkeleton from "@/components/skeletons/DepartmentGridSkeleton";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -21,8 +22,9 @@ const spaceGrotesk = Space_Grotesk({
 
 const departments = reviews;
 
-const DepartmentsListPage = () => {
+const DepartmentsContent = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = authClient.useSession();
   const user = session?.user;
 
@@ -36,6 +38,31 @@ const DepartmentsListPage = () => {
   const [remainingSlots, setRemainingSlots] = useState(2);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isContinueDisabled, setIsContinueDisabled] = useState(true);
+
+  // Ingest pre-selected departments from exploration query parameters
+  useEffect(() => {
+    const preselected = searchParams?.get("selected") || searchParams?.get("select");
+    if (preselected) {
+      const requested = preselected
+        .split(",")
+        .map((d) => decodeURIComponent(d).trim().toLowerCase());
+
+      const matched = departments
+        .filter((dept) => requested.includes(dept.name.toLowerCase()))
+        .map((dept) => dept.name)
+        .slice(0, 2);
+
+      if (matched.length > 0) {
+        setSelectedDepartments(matched);
+        toast.success(
+          `Pre-selected ${matched.join(" and ")} from your domain exploration!`,
+          {
+            description: "Review your selection and click Continue to proceed to the application form.",
+          }
+        );
+      }
+    }
+  }, [searchParams]);
 
   // Fetch candidate applications and review status
   useEffect(() => {
@@ -313,4 +340,20 @@ const DepartmentsListPage = () => {
   );
 };
 
-export default DepartmentsListPage;
+export default function DepartmentsListPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-background text-foreground">
+          <NavBar />
+          <main className="flex-1 py-10 sm:py-16">
+            <DepartmentGridSkeleton count={6} showHeader={true} />
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <DepartmentsContent />
+    </Suspense>
+  );
+}
