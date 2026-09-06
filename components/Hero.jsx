@@ -23,7 +23,7 @@ export default function Hero() {
         <div className="h-full w-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-500 [clip-path:polygon(74.1%_44.1%,100%_61.6%,97.5%_26.9%,85.5%_0.1%,80.7%_2%,72.5%_32.5%,60.2%_62.4%,52.4%_68.1%,47.5%_58.3%,45.2%_34.5%,27.5%_76.7%,0.1%_64.9%,17.9%_100%,27.6%_76.8%,76.1%_97.7%,74.1%_44.1%)]" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none">
         {/* Live Status Badge */}
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary shadow-sm mb-6 transition-transform hover:scale-105">
           <Sparkles className="h-3.5 w-3.5" />
@@ -60,7 +60,7 @@ export default function Hero() {
 
         {/* Feature Pill Highlights */}
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto text-left">
-          <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+          <div style={{ animationDelay: "40ms" }} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 mb-4">
               <Layers className="h-5 w-5" />
             </div>
@@ -70,7 +70,7 @@ export default function Hero() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+          <div style={{ animationDelay: "80ms" }} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500 mb-4">
               <Rocket className="h-5 w-5" />
             </div>
@@ -80,7 +80,7 @@ export default function Hero() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+          <div style={{ animationDelay: "120ms" }} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500 mb-4">
               <Users className="h-5 w-5" />
             </div>

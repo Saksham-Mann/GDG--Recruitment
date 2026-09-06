@@ -123,7 +123,7 @@ const DepartmentsListPage = () => {
           </div>
 
           {/* Department Cards Grid */}
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in-0 duration-200 ease-out motion-reduce:animate-none">
             {departments.map((department, index) => {
               const isSelected = selectedDepartments.includes(department.name);
               const isSubmitted = submittedDepartments?.includes(department.name);
@@ -132,8 +132,9 @@ const DepartmentsListPage = () => {
               return (
                 <div
                   key={department.id || index}
+                  style={{ animationDelay: `${Math.min(index * 25, 200)}ms` }}
                   onClick={() => !isSubmitted && toggleDepartment(department.name)}
-                  className={`group relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-200 ${
+                  className={`group relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-200 animate-in fade-in-0 slide-in-from-bottom-1 ease-out motion-reduce:animate-none motion-reduce:transition-none ${
                     isSubmitted
                       ? "opacity-50 cursor-not-allowed border-border/40 bg-muted/20"
                       : isSelected

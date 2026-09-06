@@ -783,5 +783,55 @@ Replaced all generic spinners with modular, accessible skeleton placeholders usi
 - **Cumulative Layout Shift (CLS):** Reduced to near-zero (`< 0.01`). The dimensions of skeleton elements precisely match hydrated elements, eliminating layout jumps.
 - **Perceived Latency:** Content appears instantly in structured form, improving perceived page load times by establishing visual affordance before data resolution completes.
 
+---
+
+## 30. Subtle Hydration Entrance Animations & Motion-Reduced Accessibility
+
+### Overview
+To ensure a seamless visual transition when asynchronous content hydrates and replaces the layout skeleton placeholders, lightweight and subtle entrance animations were implemented across all primary viewports. Rather than jarring content snaps or slow, distracting fades, animations are designed to be snappy, subtle, and accessible.
+
+### Entrance Animation Specifications
+1. **Transition Mechanics:**
+   - **Opacity & Translation:** Content transitions from `opacity-0 translate-y-1` (a subtle 4px vertical delta) to `opacity-100 translate-y-0`.
+   - **Duration:** 150ms to 200ms with `ease-out` timing curve (`cubic-bezier(0.16, 1, 0.3, 1)`).
+   - **Compositor Efficiency:** Relies exclusively on `opacity` and CSS `transform: translateY()`, avoiding reflows, paint storms, and layout recalculations.
+2. **Staggered Item Sequences:**
+   - **Department Selection Grid (`app/(pages)/departments/page.jsx`):** Applied subtle per-card delay increments (`animationDelay: `${Math.min(index * 25, 200)}ms``) so cards cascade in smoothly without feeling delayed.
+   - **Hero Highlight Cards (`components/Hero.jsx`):** Staggered feature cards at 40ms, 80ms, and 120ms.
+3. **Hydrated Form & Auth Containers:**
+   - **Application Form (`components/FormComp.jsx`):** The form container glides in upon session and draft resolution with `duration-200 ease-out`.
+   - **Candidate Portal Card (`app/auth/signin/page.jsx`):** Centered authentication card smoothly mounts with `fade-in-0 slide-in-from-bottom-1`.
+   - **Navigation Controls (`components/NavBar.jsx`):** Auth buttons and user profile menu fade in over 150ms once session state is authenticated.
+
+### Accessibility & Reduced Motion Safeguards
+To fully support users who experience motion sickness, vestibular conditions, or have enabled system-level motion reduction preferences:
+1. **Global CSS Media Query (`app/globals.css`):**
+   ```css
+   @media (prefers-reduced-motion: reduce) {
+     *,
+     ::before,
+     ::after {
+       animation-duration: 0.01ms !important;
+       animation-iteration-count: 1 !important;
+       transition-duration: 0.01ms !important;
+       scroll-behavior: auto !important;
+     }
+   }
+   ```
+2. **Tailwind Utility Flags:**
+   Every animated component includes `motion-reduce:animate-none` and `motion-reduce:transition-none` to guarantee immediate, non-animated rendering whenever motion reduction is requested.
+3. **Zero CLS & Interactive Safety:**
+   - Since `transform: translateY(4px)` is compositor-only, bounding boxes are locked in the DOM layout from frame zero, maintaining a `0.00` Cumulative Layout Shift.
+   - Pointer events, tab indices, and ARIA focus states are preserved throughout the transition; no element is ever unclickable or focus-trapped.
+
+### Files Updated
+- [`app/globals.css`](file:///c:/Users/saksh/Desktop/gdg/app/globals.css): Added `@keyframes subtle-entrance`, `.animate-subtle-entrance`, and global `@media (prefers-reduced-motion: reduce)`.
+- [`components/Hero.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Hero.jsx): Added entrance transition to hero container and staggered highlight cards.
+- [`app/(pages)/departments/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/departments/page.jsx): Added staggered entrance transition to department cards grid.
+- [`components/FormComp.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/FormComp.jsx): Replaced loading spinner with `FormSkeleton` and added entrance animation to form container.
+- [`app/auth/signin/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signin/page.jsx): Added entrance transition to auth card container.
+- [`components/NavBar.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/NavBar.jsx): Added 150ms fade-in transition to resolved auth buttons and user button.
+
+
 
 

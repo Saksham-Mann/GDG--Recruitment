@@ -141,7 +141,7 @@ function SignInContent() {
         <div className="pointer-events-none absolute -top-40 right-1/4 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 left-1/4 -z-10 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
 
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-6 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none">
           <Card className="border-border/60 bg-card/80 backdrop-blur-md shadow-xl rounded-2xl">
             <CardHeader className="space-y-1 text-center pb-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm mb-2">

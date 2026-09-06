@@ -136,7 +136,7 @@ const NavBar = () => {
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : !isAuthenticated ? (
-            <div className="hidden sm:flex items-center gap-1.5">
+            <div className="hidden sm:flex items-center gap-1.5 animate-in fade-in-0 duration-150 ease-out motion-reduce:animate-none">
               <Link href="/auth/signin">
                 <Button variant="ghost" size="sm" className="rounded-full font-medium text-muted-foreground hover:text-foreground">
                   Sign In
@@ -149,7 +149,9 @@ const NavBar = () => {
               </Link>
             </div>
           ) : (
-            <UserButton user={session?.user} />
+            <div className="animate-in fade-in-0 duration-150 ease-out motion-reduce:animate-none">
+              <UserButton user={session?.user} />
+            </div>
           )}
 
           {/* Mobile Drawer Toggle Button */}

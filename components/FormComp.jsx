@@ -331,19 +331,12 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-medium text-muted-foreground">Checking application status...</p>
-        </div>
-      </div>
-    );
+    return <FormSkeleton />;
   }
 
   if (!isFormOpen) {
     return (
-      <div className="mx-auto max-w-md py-16 px-4 text-center">
+      <div className="mx-auto max-w-md py-16 px-4 text-center animate-in fade-in-0 duration-200 ease-out motion-reduce:animate-none">
         <Card className="rounded-2xl border-border/60 bg-card/60 p-6">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Recruitment Closed</CardTitle>
@@ -357,7 +350,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none">
       {/* Form Header */}
       <div className="mb-8 pb-6 border-b border-border/40">
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary mb-3">
