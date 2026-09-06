@@ -17,6 +17,16 @@ export default function AuthSkeleton() {
           <Skeleton className="h-8 w-full rounded-lg" />
         </div>
 
+        {/* Social Auth & Divider Placeholder */}
+        <div className="space-y-3">
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <div className="flex items-center gap-3 py-1">
+            <Skeleton className="h-px flex-1" />
+            <Skeleton className="h-3 w-28 rounded" />
+            <Skeleton className="h-px flex-1" />
+          </div>
+        </div>
+
         {/* Form Inputs */}
         <div className="space-y-4">
           <div className="space-y-2">
