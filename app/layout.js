@@ -53,16 +53,16 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "32x32", type: "image/x-icon" },
-      { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.svg?v=2026", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=2026", sizes: "32x32", type: "image/x-icon" },
+      { url: "/icon-32x32.png?v=2026", sizes: "32x32", type: "image/png" },
     ],
     shortcut: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/icon.svg?v=2026", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=2026", type: "image/x-icon" },
     ],
     apple: [
-      { url: "/icon.svg", type: "image/svg+xml", sizes: "180x180" },
+      { url: "/icon.svg?v=2026", type: "image/svg+xml", sizes: "180x180" },
     ],
   },
 };
@@ -70,6 +70,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/icon.svg?v=2026" type="image/svg+xml" />
+        <link rel="alternate icon" href="/favicon.ico?v=2026" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="/icon.svg?v=2026" />
+      </head>
       <body className={`${inter.className} min-h-screen bg-background text-foreground antialiased`}>
         {/* Skip to Content Accessibility Link */}
         <a
