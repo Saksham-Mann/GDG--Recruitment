@@ -41,9 +41,9 @@ export default function CandidateStatusCard({
       glowBg: "bg-emerald-500/10",
       icon: Sparkles,
       iconBg: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-      title: "🎉 Congratulations! You have been shortlisted!",
+      title: "Congratulations! You have been shortlisted!",
       primaryMessage:
-        "🎉 Congratulations! You have been shortlisted for the next round. Check your email for further instructions!",
+        "Congratulations! You have been shortlisted for the next round. Check your email for further instructions!",
       subMessage:
         "Our team was impressed by your submission. Please monitor your student inbox for interview scheduling and round-two details.",
       headerStyle: "from-emerald-500/10 to-teal-500/5",
@@ -203,7 +203,7 @@ export default function CandidateStatusCard({
           <span>Official announcements are mirrored to your registered student email.</span>
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          <Link href="/departments">
+          <Link href="/explore-departments">
             <Button variant="outline" size="sm" className="rounded-full text-xs font-medium">
               View All Domains
             </Button>

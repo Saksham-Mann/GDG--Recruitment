@@ -13,7 +13,6 @@ import FilterShortlisted from "./FilterShortlisted";
 import { FaSortAmountDownAlt } from "react-icons/fa";
 import { GrPowerReset } from "react-icons/gr";
 import { Button } from "./ui/button";
-import { CheckBoxComp } from "./CheckBoxComp";
 import { toast } from "sonner";
 import { curDate, curDay, curMonth, curYear, months, days } from "@/constants";
 import { IoCloudDownloadOutline } from "react-icons/io5";
@@ -23,12 +22,10 @@ import {
   useGlobalFilter,
   useFilters,
   usePagination,
-  useRowSelect,
 } from "react-table";
 import { Input } from "@/components/ui/input";
 import PaginationComp from "./PaginationComp";
 import ApplicantDetailsModal from "./ApplicantDetailsModal";
-import MailComposer from "./MailComposer";
 import { CSVLink } from "react-csv";
 import { CSV_Header } from "@/constants";
 import { Clock, CheckCircle2, XCircle } from "lucide-react";
@@ -276,7 +273,6 @@ const DataTable = ({ data }) => {
     pageCount,
     setPageSize,
     setGlobalFilter,
-    selectedFlatRows,
   } = useTable(
     {
       columns,
@@ -285,27 +281,7 @@ const DataTable = ({ data }) => {
     useFilters,
     useGlobalFilter,
     useSortBy,
-    usePagination,
-    useRowSelect,
-    (hooks) => {
-      hooks.visibleColumns.push((columns) => {
-        return [
-          {
-            Header: ({ getToggleAllRowsSelectedProps }) => (
-              <div onClick={(e) => e.stopPropagation()}>
-                <CheckBoxComp {...getToggleAllRowsSelectedProps()} />
-              </div>
-            ),
-            Cell: ({ row }) => (
-              <div onClick={(e) => e.stopPropagation()}>
-                <CheckBoxComp {...row.getToggleRowSelectedProps()} />
-              </div>
-            ),
-          },
-          ...columns,
-        ];
-      });
-    }
+    usePagination
   );
 
   const { globalFilter, pageIndex } = state;
@@ -317,44 +293,6 @@ const DataTable = ({ data }) => {
     } else {
       setPageSize(10);
     }
-  };
-
-  const handleRowSelection = async (payloadData) => {
-    const selectedApplicants = selectedFlatRows.map((row) => row.original);
-    const request = {
-      recipients: selectedApplicants,
-      payloadData: payloadData,
-    };
-
-    try {
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (response.ok) {
-        toast("Invite has been sent!", {
-          description: `On ${months[curMonth - 1]} ${curDate}, ${curYear}`,
-        });
-      } else {
-        toast("Failed to send invite", {
-          description: "Please try again later.",
-        });
-      }
-    } catch (error) {
-      console.error("Error sending emails:", error);
-      toast("Failed to send invite", {
-        description: "Please try again later.",
-      });
-    }
-  };
-
-  const showRowData = () => {
-    const selectedApplicants = selectedFlatRows.map((row) => row.original);
-    return selectedApplicants;
   };
 
   const formatQuestionsForCsv = (item) => {

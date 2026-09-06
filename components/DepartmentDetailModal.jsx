@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
-  Check,
-  CheckCircle2,
   ArrowRight,
   Layers,
   Sparkles,
@@ -31,15 +30,12 @@ import { getDepartmentDetails } from "@/constants/departmentDetails";
  * DepartmentDetailModal
  * Accessible, zero-CLS modal displaying complete informational details about a department.
  * Features banner photography, active projects, team culture, tech stack chips,
- * and direct "Select this Department" / "Apply to this Department" CTAs.
+ * and informational CTAs.
  */
 export default function DepartmentDetailModal({
   department,
   isOpen,
   onClose,
-  isSelected,
-  onToggleSelect,
-  onApplyDirect,
 }) {
   if (!department) return null;
 
@@ -181,40 +177,15 @@ export default function DepartmentDetailModal({
             Close Overview
           </Button>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* Toggle Selection Button */}
+          <Link href="/departments" className="w-full sm:w-auto">
             <Button
               type="button"
-              variant={isSelected ? "secondary" : "outline"}
-              onClick={() => onToggleSelect(department.name)}
-              className={`rounded-full px-5 text-xs font-semibold transition-all w-full sm:w-auto ${
-                isSelected
-                  ? "bg-primary/15 text-primary border-primary/40 hover:bg-primary/20"
-                  : "hover:border-primary/50"
-              }`}
-            >
-              {isSelected ? (
-                <>
-                  <Check className="h-3.5 w-3.5 mr-1.5 stroke-[2.5]" />
-                  <span>Selected for Application</span>
-                </>
-              ) : (
-                <>
-                  <span>Select this Domain</span>
-                </>
-              )}
-            </Button>
-
-            {/* Direct Apply Button */}
-            <Button
-              type="button"
-              onClick={() => onApplyDirect(department.name)}
               className="rounded-full px-6 text-xs font-semibold shadow-md shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30 w-full sm:w-auto"
             >
               <span>Apply to this Domain</span>
               <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
             </Button>
-          </div>
+          </Link>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -80,7 +80,7 @@ const NavBar = () => {
           : "border-b border-transparent bg-background/40 backdrop-blur-sm"
       }`}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo & Name */}
         <Link href="/" className="group flex items-center gap-3 transition-transform hover:scale-[1.02]">
           <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-500 p-[1px] shadow-md shadow-blue-500/10">
@@ -98,8 +98,8 @@ const NavBar = () => {
           </div>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/40">
+        {/* Desktop Navigation Links - Centered Absolutely */}
+        <nav className="hidden md:flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/40 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-auto">
           <Link
             href="/"
             className="rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-background/80"

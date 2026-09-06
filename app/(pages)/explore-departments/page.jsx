@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { Space_Grotesk } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
@@ -11,18 +10,14 @@ import { reviews } from "@/constants";
 import { departmentDetailsMap } from "@/constants/departmentDetails";
 import DepartmentDetailModal from "@/components/DepartmentDetailModal";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
   Layers,
-  Check,
   Compass,
   Code2,
   Maximize2,
-  ExternalLink,
 } from "lucide-react";
 
 const spaceGrotesk = Space_Grotesk({
@@ -31,50 +26,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export default function ExploreDepartmentsPage() {
-  const router = useRouter();
-  const [selectedDepartments, setSelectedDepartments] = useState([]);
   const [activeModalDepartment, setActiveModalDepartment] = useState(null);
-
-  const toggleDepartmentSelect = (deptName) => {
-    setSelectedDepartments((current) => {
-      if (current.includes(deptName)) {
-        toast.info(`Deselected ${deptName}`);
-        return current.filter((name) => name !== deptName);
-      }
-      if (current.length >= 2) {
-        toast.warning(
-          "Selection Limit: You can select at most 2 domains for your recruitment application.",
-          {
-            description: "Deselect an existing domain to add another.",
-          }
-        );
-        return current;
-      }
-      toast.success(`Selected ${deptName} for application!`, {
-        description: "You can proceed to apply or continue exploring other teams.",
-      });
-      return [...current, deptName];
-    });
-  };
-
-  const handleApplyDirect = (deptName) => {
-    const list = selectedDepartments.includes(deptName)
-      ? selectedDepartments
-      : [...selectedDepartments.slice(0, 1), deptName];
-
-    setActiveModalDepartment(null);
-    router.push(`/departments?selected=${encodeURIComponent(list.join(","))}`);
-  };
-
-  const handleProceedToApply = () => {
-    if (selectedDepartments.length > 0) {
-      router.push(
-        `/departments?selected=${encodeURIComponent(selectedDepartments.join(","))}`
-      );
-    } else {
-      router.push("/departments");
-    }
-  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground relative">
@@ -101,18 +53,15 @@ export default function ExploreDepartmentsPage() {
 
             {/* Quick Action to Proceed */}
             <div className="flex items-center gap-3 shrink-0">
-              <Button
-                size="lg"
-                onClick={handleProceedToApply}
-                className="rounded-full px-6 font-semibold shadow-md shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30"
-              >
-                <span>
-                  {selectedDepartments.length > 0
-                    ? `Proceed with (${selectedDepartments.length})`
-                    : "Proceed to Apply"}
-                </span>
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <Link href="/departments">
+                <Button
+                  size="lg"
+                  className="rounded-full px-6 font-semibold shadow-md shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30"
+                >
+                  <span>Apply Now</span>
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -120,7 +69,6 @@ export default function ExploreDepartmentsPage() {
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in-0 duration-200 ease-out motion-reduce:animate-none">
             {reviews.map((department, index) => {
               const details = departmentDetailsMap[department.name] || {};
-              const isSelected = selectedDepartments.includes(department.name);
               const IconComponent = department.icon || Layers;
               const toneColor = department.tone || "#3b82f6";
 
@@ -138,11 +86,7 @@ export default function ExploreDepartmentsPage() {
                       setActiveModalDepartment(department);
                     }
                   }}
-                  className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border bg-card/60 backdrop-blur-xs transition-all duration-200 cursor-pointer shadow-xs hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                    isSelected
-                      ? "border-primary/70 bg-primary/[0.03] ring-1 ring-primary/40"
-                      : "border-border/60"
-                  }`}
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xs transition-all duration-200 cursor-pointer shadow-xs hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {/* Department Banner Image Header */}
                   <div className="relative h-44 w-full overflow-hidden bg-muted">
@@ -159,8 +103,8 @@ export default function ExploreDepartmentsPage() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
 
-                    {/* Top Floating Badges */}
-                    <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none">
+                    {/* Top Floating Badge */}
+                    <div className="absolute top-3 left-3 pointer-events-none">
                       <div
                         className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md backdrop-blur-md border border-white/20"
                         style={{
@@ -170,13 +114,6 @@ export default function ExploreDepartmentsPage() {
                       >
                         <IconComponent className="h-5 w-5" />
                       </div>
-
-                      {isSelected && (
-                        <Badge className="bg-primary text-primary-foreground font-semibold px-2.5 py-1 rounded-full text-[11px] shadow-sm flex items-center gap-1">
-                          <Check className="h-3 w-3 stroke-[3]" />
-                          <span>Pre-Selected</span>
-                        </Badge>
-                      )}
                     </div>
 
                     {/* Bottom Title on Image */}
@@ -217,25 +154,11 @@ export default function ExploreDepartmentsPage() {
 
                     {/* Interactive Tap Prompt Footer */}
                     <div className="pt-3 border-t border-border/40 flex items-center justify-between text-xs">
-                      <span className="inline-flex items-center gap-1 font-medium text-primary group-hover:underline">
+                      <span className="inline-flex items-center gap-1.5 font-medium text-primary group-hover:underline">
                         <Maximize2 className="h-3.5 w-3.5" />
-                        <span>Tap to view details</span>
+                        <span>View Department Details</span>
                       </span>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleDepartmentSelect(department.name);
-                        }}
-                        className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all ${
-                          isSelected
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-muted/40 text-muted-foreground border-border/60 hover:border-primary/50 hover:text-foreground"
-                        }`}
-                      >
-                        {isSelected ? "Selected" : "+ Select"}
-                      </button>
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </div>
                 </div>
@@ -247,7 +170,7 @@ export default function ExploreDepartmentsPage() {
 
       {/* Persistent Glassmorphic Floating Bottom Bar */}
       <div className="fixed bottom-5 inset-x-0 z-40 px-4 pointer-events-none">
-        <div className="mx-auto max-w-2xl rounded-full border border-border/80 bg-background/90 backdrop-blur-xl shadow-2xl p-2 sm:p-2.5 flex items-center justify-between gap-3 pointer-events-auto transition-all">
+        <div className="mx-auto max-w-lg rounded-full border border-border/80 bg-background/90 backdrop-blur-xl shadow-2xl p-2 sm:p-2.5 flex items-center justify-between gap-3 pointer-events-auto transition-all">
           {/* Left Anchor: Back to Home */}
           <Link href="/">
             <Button
@@ -260,23 +183,16 @@ export default function ExploreDepartmentsPage() {
             </Button>
           </Link>
 
-          {/* Center: Selection Counter */}
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Pre-Selected:</span>
-            <span className="text-xs font-bold font-mono px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-              {selectedDepartments.length} / 2 Domains
-            </span>
-          </div>
-
-          {/* Right Anchor: Proceed to Apply */}
-          <Button
-            size="sm"
-            onClick={handleProceedToApply}
-            className="rounded-full px-5 sm:px-6 text-xs sm:text-sm font-semibold shadow-md shadow-primary/20 transition-all hover:scale-105 h-10"
-          >
-            <span>Proceed to Apply</span>
-            <ArrowRight className="h-4 w-4 ml-1.5" />
-          </Button>
+          {/* Right Anchor: Apply Now */}
+          <Link href="/departments">
+            <Button
+              size="sm"
+              className="rounded-full px-5 sm:px-6 text-xs sm:text-sm font-semibold shadow-md shadow-primary/20 transition-all hover:scale-105 h-10"
+            >
+              <span>Apply Now</span>
+              <ArrowRight className="h-4 w-4 ml-1.5" />
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -285,13 +201,6 @@ export default function ExploreDepartmentsPage() {
         department={activeModalDepartment}
         isOpen={!!activeModalDepartment}
         onClose={() => setActiveModalDepartment(null)}
-        isSelected={
-          activeModalDepartment
-            ? selectedDepartments.includes(activeModalDepartment.name)
-            : false
-        }
-        onToggleSelect={toggleDepartmentSelect}
-        onApplyDirect={handleApplyDirect}
       />
 
       <Footer />
