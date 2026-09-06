@@ -110,20 +110,20 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
   );
 
   const schemaObj = {
-    Name: z.string().min(1, "Name is required"),
+    Name: z.string().min(1, "Name Required: Candidate name is empty. Please enter your full official name as registered at university."),
     RegistrationNumber: z
       .string()
-      .min(1, "Registration number is required")
+      .min(1, "Registration Number Required: Registration field is blank. Please enter your university registration number.")
       .regex(
         /^\d{2}[A-Za-z]{3}\d{4}$/,
-        "Registration number must be 2 numbers, 3 letters, and 4 numbers (e.g. 25BCE5612)"
+        "Invalid Registration Format: Entered code does not match VIT pattern (e.g. 25BCE5612). Please verify your 2-digit year, 3-letter branch, and 4-digit roll number."
       ),
     Email: z.string(),
     Gender: z.string().optional(),
     Phone: z
       .string()
-      .min(1, "Phone is required")
-      .regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
+      .min(1, "Phone Number Required: Contact field is empty. Please enter your active WhatsApp number for interview updates.")
+      .regex(/^\d{10}$/, "Invalid Phone Number: Number must contain exactly 10 digits without country code. Please enter your valid 10-digit mobile number."),
     "Year of Study": z.string().optional(),
     "Why do you want to join Organization Name?": z.string().optional(),
   };
@@ -284,7 +284,11 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
       });
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Could not submit ${department}.`);
+        let friendlyMessage = error.message;
+        if (!friendlyMessage || friendlyMessage === "Error submitting form") {
+          friendlyMessage = `Submission Interrupted for ${department}: The recruitment server could not complete processing. Your drafted answers are preserved locally. Please check your network connection and click 'Submit Application' again.`;
+        }
+        throw new Error(friendlyMessage);
       }
       return { department, success: true };
     };
@@ -314,6 +318,11 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
         const errorSummary = failed.map((f) => `${f.dept}: ${f.reason || "Submission failed"}`).join(" | ");
         setErrorMessage(errorSummary);
       } else {
+        if (draftKey && typeof window !== "undefined") {
+          try {
+            localStorage.removeItem(draftKey);
+          } catch {}
+        }
         toast.success("Application submitted successfully!");
         router.push("/departments");
       }

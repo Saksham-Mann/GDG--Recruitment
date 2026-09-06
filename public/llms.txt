@@ -1,0 +1,25 @@
+# GDG Recruitment Portal
+
+> Official recruitment portal for Google Developer Groups (GDG) student chapter at VIT.
+
+## Overview
+The GDG Recruitment Portal enables prospective student members to explore domains, review technical requirements, submit applications, and track selection progress.
+
+## Core Rules & Policies
+- Applicants may apply for a maximum of two (2) unique departments per recruitment cycle.
+- Applications must be submitted using a valid university student email address and official registration number.
+- Applications must be received prior to the stated recruitment deadline.
+
+## Active Recruitment Domains
+1. **App Dev:** Mobile development across Flutter, React Native, Native Android, and iOS.
+2. **Blockchain:** Decentralized applications, Web3 smart contracts, EVM, and cryptography.
+3. **Cloud & DevOps:** Cloud infrastructure (GCP/AWS), containerization (Docker, K8s), CI/CD workflows, and Linux system administration.
+4. **Competitive Programming:** Advanced data structures, algorithmic optimization, and competitive coding contests.
+5. **Data Science:** Machine learning, deep learning architectures, statistical modeling, and data pipelines.
+6. **Design:** Brand identities, visual posters, event collateral, typography, and illustration.
+7. **Game Dev:** Interactive games, physics, engines (Unity, Unreal, Godot), and gameplay mechanics.
+8. **Management:** Event operations, community logistics, schedule planning, and stage coordination.
+9. **Outreach:** Corporate partnerships, sponsor relations, cross-campus networking, and guest speaker outreach.
+10. **Publicity:** Social media storytelling, teaser campaigns, video editing, reels, and digital marketing.
+11. **UI/UX:** Wireframing, design systems in Figma, user research, accessibility, and interface prototyping.
+12. **Web Dev:** Full-stack modern web engineering using Next.js, React, Node.js, and TypeScript.

@@ -75,3 +75,29 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@media print {
+  header,
+  footer,
+  aside,
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  a {
+    text-decoration: underline;
+    color: #000000 !important;
+  }
+}
+

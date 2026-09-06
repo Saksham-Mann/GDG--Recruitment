@@ -14,6 +14,22 @@ export default function SignOutPage() {
   useEffect(() => {
     const performSignOut = async () => {
       try {
+        if (typeof window !== "undefined") {
+          try {
+            Object.keys(localStorage).forEach((key) => {
+              if (key.startsWith("recruitment-draft:") || key.startsWith("gdg_") || key.includes("draft")) {
+                localStorage.removeItem(key);
+              }
+            });
+            Object.keys(sessionStorage).forEach((key) => {
+              if (key.startsWith("submitted_depts_")) {
+                sessionStorage.removeItem(key);
+              }
+            });
+          } catch (storageErr) {
+            console.warn("Draft cleanup on signout warning:", storageErr);
+          }
+        }
         await authClient.signOut();
         toast.success("Signed out successfully");
         router.push("/");

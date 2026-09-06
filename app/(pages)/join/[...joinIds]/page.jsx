@@ -77,18 +77,17 @@ const JoinDepartmentPage = ({ params }) => {
     );
   }
 
-  const departments = reviews.filter((dept) =>
-    params.joinIds.includes(dept.id),
-  );
-  const ids = params.joinIds;
-
-  const valid = ids.every(
-    (id) => reviews.some((dept) => dept.id === id) || id.startsWith("clerk_"),
-  );
+  const ids = Array.isArray(params?.joinIds) ? params.joinIds : [];
+  const valid =
+    ids.length >= 1 &&
+    ids.length <= 2 &&
+    ids.every((id) => reviews.some((dept) => dept.id === id));
 
   if (!valid) {
     notFound();
   }
+
+  const departments = reviews.filter((dept) => ids.includes(dept.id));
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">

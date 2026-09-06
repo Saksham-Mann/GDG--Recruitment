@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Mail, Lock, User, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Lock, User, Sparkles, Eye, EyeOff } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 
@@ -35,6 +35,7 @@ export default function SignInPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -68,12 +69,12 @@ export default function SignInPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error("Please fill in all required fields.");
+      toast.error("Credentials Incomplete: Email or password field is blank. Please enter both your email address and password to proceed.");
       return;
     }
 
     if (mode === "signup" && !name) {
-      toast.error("Please enter your full name.");
+      toast.error("Full Name Required: Name field is blank. Please provide your official name as registered with university records.");
       return;
     }
 
@@ -87,7 +88,7 @@ export default function SignInPage() {
           callbackURL: "/",
         });
         if (res?.error) {
-          toast.error(res.error.message || "Failed to create account.");
+          toast.error(`Account Creation Failed: ${res.error.message || "A user with this email may already exist. Please verify your email address or click Sign In."}`);
         } else {
           toast.success("Account created successfully!");
           router.push("/");
@@ -99,7 +100,7 @@ export default function SignInPage() {
           callbackURL: "/",
         });
         if (res?.error) {
-          toast.error(res.error.message || "Invalid credentials.");
+          toast.error("Authentication Failed: The email or password entered does not match existing records. Please verify your credentials or click 'Create Account' if you are new.");
         } else {
           toast.success("Signed in successfully!");
           router.push("/");
@@ -107,7 +108,7 @@ export default function SignInPage() {
       }
     } catch (err) {
       console.error("Auth error:", err);
-      toast.error("Authentication failed. Please check your credentials.");
+      toast.error("Connection Failed: Unable to reach authentication service. Please check your network connection and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -214,13 +215,25 @@ export default function SignInPage() {
                     <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-9 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary"
+                      className="pl-9 pr-10 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </CardContent>

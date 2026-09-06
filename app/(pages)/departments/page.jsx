@@ -85,7 +85,7 @@ const DepartmentsListPage = () => {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <NavBar />
 
-      <main className="flex-1 py-10 sm:py-16">
+      <main id="main-content" className="flex-1 py-10 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 pb-8 border-b border-border/40">
