@@ -19,37 +19,42 @@ export async function POST(req) {
     const user = session.user;
     const userEmail = user.email;
 
-    const deadline = new Date("2026-08-23T23:59:59+05:30");
-    if (new Date() > deadline)
+    const deadlineStr = process.env.RECRUITMENT_DEADLINE || "2026-12-31T23:59:59+05:30";
+    const deadline = new Date(deadlineStr);
+    if (new Date() > deadline) {
       return new Response(
         JSON.stringify({
-          message: "The submission deadline has passed"
+          message: "The submission deadline has passed",
         }),
         { status: 403 }
       );
-                  
+    }
 
     const db = await connect();
     const data = await req.json();
 
     const { Department, Questions, ...formFields } = data;
 
-    const regNoRegex = /^\d{2}[A-Z]{3}\d{4}$/;
-    if (formFields.RegistrationNumber && !regNoRegex.test(formFields.RegistrationNumber)) {
+    const rawReg = formFields.RegistrationNumber;
+    const normalizedReg = typeof rawReg === "string" ? rawReg.trim().toUpperCase() : "";
+    const regNoRegex = /^\d{2}[A-Za-z]{3}\d{4}$/;
+
+    if (normalizedReg && !regNoRegex.test(normalizedReg)) {
       return new Response(
         JSON.stringify({
-          message: "Registration number must be 2 numbers, 3 uppercase letters, and 4 numbers (e.g. 25BCE5612)",
+          message: "Registration number must be 2 numbers, 3 letters, and 4 numbers (e.g. 25BCE5612)",
         }),
         { status: 400 }
       );
     }
+    formFields.RegistrationNumber = normalizedReg;
 
     const collection = db.collection("formData");
 
     const existingSubmissions = await collection.where("Email", "==", userEmail).get();
 
     const alreadySubmittedDept = existingSubmissions.docs.some(
-      (doc) => doc.data()?.Department === Department
+      (doc) => (doc.data()?.Department || "").trim().toLowerCase() === (Department || "").trim().toLowerCase()
     );
 
     if (alreadySubmittedDept) {
@@ -70,10 +75,23 @@ export async function POST(req) {
       );
     }
 
+    // Sanitize values to prevent Firestore undefined value errors
+    const cleanQuestions = {};
+    if (Questions && typeof Questions === "object") {
+      for (const [qKey, qVal] of Object.entries(Questions)) {
+        cleanQuestions[qKey] = qVal !== undefined && qVal !== null ? String(qVal) : "";
+      }
+    }
+
+    const cleanFields = {};
+    for (const [fKey, fVal] of Object.entries(formFields)) {
+      cleanFields[fKey] = fVal !== undefined && fVal !== null ? fVal : "";
+    }
+
     await collection.add({
-      ...formFields,
+      ...cleanFields,
       Department,
-      Questions,
+      Questions: cleanQuestions,
       Email: userEmail,
       createdAt: new Date(),
     });

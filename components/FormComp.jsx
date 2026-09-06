@@ -115,15 +115,17 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
       .string()
       .min(1, "Registration number is required")
       .regex(
-        /^\d{2}[A-Z]{3}\d{4}$/,
-        "Registration number must be 2 numbers, 3 uppercase letters, and 4 numbers (e.g. 25BCE5612)"
+        /^\d{2}[A-Za-z]{3}\d{4}$/,
+        "Registration number must be 2 numbers, 3 letters, and 4 numbers (e.g. 25BCE5612)"
       ),
     Email: z.string(),
+    Gender: z.string().optional(),
     Phone: z
       .string()
       .min(1, "Phone is required")
       .regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
     "Year of Study": z.string().optional(),
+    "Why do you want to join Organization Name?": z.string().optional(),
   };
 
   questionData.forEach((qd) => {
@@ -259,14 +261,16 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
 
     const basicDetails = {
       Name: values.Name,
-      RegistrationNumber: values.RegistrationNumber,
+      RegistrationNumber: values.RegistrationNumber ? values.RegistrationNumber.trim().toUpperCase() : "",
       Email: values.Email,
+      Gender: values.Gender || "",
       Phone: values.Phone,
-      "Year of Study": values["Year of Study"],
+      "Year of Study": values["Year of Study"] || "",
+      "Why do you want to join Organization Name?": values["Why do you want to join Organization Name?"] || "",
     };
 
     const submitDepartment = async (department) => {
-      const questions = (QuestionnaireData.find((item) => item.department === department)?.questions ?? [])
+      const questions = (QuestionnaireData.find((item) => normalizeDeptName(item.department) === normalizeDeptName(department))?.questions ?? [])
         .map(normaliseQuestion);
 
       const response = await fetch("/api/submit-form", {
@@ -291,7 +295,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
         .filter((result) => result.status === "fulfilled" && result.value.success)
         .map((result) => result.value.department);
       const failed = results.flatMap((result, index) =>
-        result.status === "rejected" ? [pendingDepartments[index]] : []
+        result.status === "rejected" ? [{ dept: pendingDepartments[index], reason: result.reason?.message }] : []
       );
       const completed = [...new Set([...submittedDepartments, ...successful])];
 
@@ -301,15 +305,23 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
       if (typeof window !== "undefined" && values?.Email) {
         sessionStorage.setItem(`submitted_depts_${values.Email}`, JSON.stringify(completed));
       }
-      successful.forEach((department) => toast.success(`Application submitted for ${department}.`));
+      successful.forEach((department) => toast.success(`Application submitted for ${department}!`));
 
       if (failed.length) {
-        setErrorMessage(`Submitted ${successful.length ? successful.join(", ") : "no applications"}. Please retry ${failed.join(", ")}.`);
+        failed.forEach(({ dept, reason }) => {
+          toast.error(`${dept}: ${reason || "Submission failed"}`);
+        });
+        const errorSummary = failed.map((f) => `${f.dept}: ${f.reason || "Submission failed"}`).join(" | ");
+        setErrorMessage(errorSummary);
       } else {
+        toast.success("Application submitted successfully!");
         router.push("/departments");
       }
-    } catch {
-      setErrorMessage("Your applications could not be submitted. Your saved answers will be kept for retrying.");
+    } catch (err) {
+      console.error("Submission error:", err);
+      const msg = err?.message || "Your applications could not be submitted. Please try again.";
+      toast.error(msg);
+      setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -531,8 +543,9 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
 };
 
 const renderDepartmentQuestions = (department, QuestionnaireData, form) => {
+  const normalizeDeptName = (str) => (str ? str.trim().toLowerCase().replace(/\s*\/\s*/g, "/") : "");
   const questions = (
-    QuestionnaireData.find(qd => qd.department === department)?.questions ?? []
+    QuestionnaireData.find(qd => normalizeDeptName(qd.department) === normalizeDeptName(department))?.questions ?? []
   )
     .map(normaliseQuestion)
     .filter((question) => question.name !== "Why do you want to join Organization Name?" && question.name !== "Why do you want to join DWASFW?");

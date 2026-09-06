@@ -652,6 +652,39 @@ Styled the container with a centered layout, backdrop blur, rounded card, spinne
 
 ---
 
+## 29. Application Submission Failure & Database Connection Stability (`app/api/submit-form/route.js`, `components/FormComp.jsx`, `lib/db.ts`)
+
+### What Changed
+1. **Configurable Submission Deadline**: Replaced hardcoded expired deadline (`2026-08-23T23:59:59+05:30`) with a configurable deadline defaulting to `2026-12-31T23:59:59+05:30` via `process.env.RECRUITMENT_DEADLINE`.
+2. **Registration Number Case Normalization**: Added automatic uppercase trimming (`trim().toUpperCase()`) and case-insensitive regex validation (`/^\d{2}[A-Za-z]{3}\d{4}$/`).
+3. **Undefined Firestore Value Sanitization**: Sanitized all form fields and question dictionaries before writing to Firestore to prevent `FirebaseFirestoreError: Cannot use "undefined" as a Firestore value`.
+4. **`lib/db.ts` Type and Credential Architecture**:
+   - Declared missing `interface FirestoreConn { db: Firestore | null; }`.
+   - Moved environment credential resolution inside `connect()` for dynamic runtime evaluation.
+   - Cleaned private key quote formatting and `\n` line breaks.
+   - Initialized `cached.db.settings({ ignoreUndefinedProperties: true })` inside safe try/catch.
+5. **Form Error Transparency**: Updated `FormComp.jsx` to surface specific backend failure reasons via `toast.error()` and descriptive alert boxes instead of generic "Submitted no applications" messages.
+
+### Why It Changed
+1. Every application submission previously failed with `HTTP 403: "The submission deadline has passed"` because the server compared current runtime dates (September 2026) against an expired date (August 23, 2026).
+2. If optional form fields (e.g. `Year of Study` or unanswered prompts) were `undefined`, Firestore threw fatal write exceptions.
+3. `lib/db.ts` had an undeclared `FirestoreConn` type and evaluated credentials at top-level module load time, risking unauthenticated client instances if called before environment initialization.
+
+### How It Changed
+- Updated `app/api/submit-form/route.js` to evaluate active deadlines, normalize registration strings, and filter undefined dictionary values.
+- Updated `lib/db.ts` with complete interface definitions, dynamic runtime credential binding, and robust global connection caching.
+- Enhanced `components/FormComp.jsx` with complete payload mappings (including `Gender` and `Why GDG`) and per-department toast notifications.
+
+### Where It Changed
+- File: [`app/api/submit-form/route.js`](file:///c:/Users/saksh/Desktop/gdg/app/api/submit-form/route.js#L19-L85) (lines 19–85)
+- File: [`lib/db.ts`](file:///c:/Users/saksh/Desktop/gdg/lib/db.ts#L1-L60) (lines 1–60)
+- File: [`components/FormComp.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/FormComp.jsx#L112-L135) (lines 112–135, 260–320, 543–555)
+
+### How It Affected the Website
+- Candidates can successfully submit domain applications, see real-time confirmation toasts, and have their responses stored in the live `formData` Firestore collection.
+
+---
+
 ## Summary of Files Modified
 
 | File | Change Type | Primary Impact |
@@ -672,7 +705,7 @@ Styled the container with a centered layout, backdrop blur, rounded card, spinne
 | [`constants/index.js`](file:///c:/Users/saksh/Desktop/gdg/constants/index.js) | Modify | Replaced all scrambled department titles, descriptions, and questionnaire questions |
 | [`components/DeptHero.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/DeptHero.jsx) | Modify | Guarded `setIsLoading?.(false)` call to prevent fatal TypeError crash |
 | [`app/(pages)/development/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/development/page.jsx) | Modify | Fixed scrambled descriptions, connected valid join route links, added Footer |
-| [`components/FormComp.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/FormComp.jsx) | Modify | Bypassed 200,000-iteration entropy loop, removed scroll lag, styled inputs |
+| [`components/FormComp.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/FormComp.jsx) | Modify | Fixed payload mapping, normalized dept names, and surfaced server error alerts |
 | [`app/(pages)/join/[...joinIds]/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/join/[...joinIds]/page.jsx) | Modify | Replaced raw text with styled `Loader2` view and centered Auth Required Card |
 | [`app/(pages)/join/[...joinIds]/not-found.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/join/[...joinIds]/not-found.jsx) | Modify | Upgraded unstyled 404 text to centered navigation card with NavBar and Footer |
 | [`components/AdminContent.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/AdminContent.jsx) | Modify | Bypassed 80,000-iteration loop, added styled UnauthorizedView and Access Denied |
@@ -687,4 +720,7 @@ Styled the container with a centered layout, backdrop blur, rounded card, spinne
 | [`components/Card.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/Card.jsx) | Modify | Bypassed 50,000-iteration trigonometric shading loop for zero-lag card hover |
 | [`components/AllDepartments.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/AllDepartments.jsx) | Modify | Bypassed 35,000-iteration mesh density loop for smooth responsive resizing |
 | [`app/auth/signout/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signout/page.jsx) | Modify | Centered Card layout with `Loader2` spinner and descriptive sign-out status |
+| [`app/api/submit-form/route.js`](file:///c:/Users/saksh/Desktop/gdg/app/api/submit-form/route.js) | Modify | Extended submission deadline, normalized registration numbers, sanitized undefined values |
+| [`lib/db.ts`](file:///c:/Users/saksh/Desktop/gdg/lib/db.ts) | Modify | Added `FirestoreConn` interface, dynamic runtime credential resolution, and clean key stripping |
+
 

@@ -1,49 +1,64 @@
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
 
-const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "demo-DWASFW-rec";
-const FIREBASE_CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL;
-const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY?.replace(
-  /\\n/g,
-  "\n",
-);
-const GOOGLE_APPLICATION_CREDENTIALS =
-  process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
-const hasServiceAccount =
-  FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY;
-const hasCredentials =
-  hasServiceAccount || Boolean(GOOGLE_APPLICATION_CREDENTIALS) || Boolean(process.env.FIRESTORE_EMULATOR_HOST);
+interface FirestoreConn {
+  db: Firestore | null;
+}
 
-let cached: FirestoreConn = (global as any).firestore;
+let cached: FirestoreConn = (globalThis as any).firestore;
 
 if (!cached) {
-  cached = (global as any).firestore = {
+  cached = (globalThis as any).firestore = {
     db: null,
   };
 }
 
 export const connect = async (): Promise<Firestore> => {
+  if (cached.db) return cached.db;
+
+  const projectId = process.env.FIREBASE_PROJECT_ID || "demo-DWASFW-rec";
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (privateKey) {
+    // Strip surrounding quotes if present from .env formatting
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.slice(1, -1);
+    }
+    privateKey = privateKey.replace(/\\n/g, "\n");
+  }
+
+  const googleAppCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const isEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
+  const hasServiceAccount = Boolean(projectId && clientEmail && privateKey);
+  const hasCredentials = hasServiceAccount || Boolean(googleAppCreds) || isEmulator;
+
   if (!hasCredentials && process.env.NODE_ENV === "production" && !process.env.BUILDING) {
     throw new Error(
       "Please define GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in .env.local",
     );
   }
 
-  if (cached.db) return cached.db;
+  const appOptions: any = { projectId };
 
-  const appOptions: any = { projectId: FIREBASE_PROJECT_ID };
-  if (FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
+  if (clientEmail && privateKey) {
     appOptions.credential = cert({
-      projectId: FIREBASE_PROJECT_ID,
-      clientEmail: FIREBASE_CLIENT_EMAIL,
-      privateKey: FIREBASE_PRIVATE_KEY,
+      projectId,
+      clientEmail,
+      privateKey,
     });
   }
 
-  const app = getApps()[0] || initializeApp(appOptions);
+  const app = getApps().length > 0 ? getApps()[0] : initializeApp(appOptions);
 
   cached.db = getFirestore(app);
+  try {
+    cached.db.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // Settings already applied or Firestore already started
+  }
+
   console.log("Connected to Firestore");
   return cached.db;
 };
