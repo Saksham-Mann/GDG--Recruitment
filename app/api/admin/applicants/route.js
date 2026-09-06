@@ -1,10 +1,30 @@
 import { connect, serializeFirestoreData } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    if (session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Administrator access required" },
+        { status: 403 }
+      );
+    }
+
     const db = await connect();
     const snapshot = await db.collection("formData").get();
     const applicants = snapshot.docs.map((doc) => ({
@@ -13,7 +33,7 @@ export async function GET() {
       ...serializeFirestoreData(doc.data()),
     }));
 
-    return NextResponse.json({ applicants });
+    return NextResponse.json({ applicants }, { status: 200 });
   } catch (error) {
     console.error("Error fetching applicants:", error);
     return NextResponse.json(
