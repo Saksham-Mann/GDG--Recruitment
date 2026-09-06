@@ -38,15 +38,8 @@ const Card = ({ title, description, bgColor, Icon }) => {
     setActiveElevation(isHovered ? (contrastRatio > 0.5 ? 4 : 8) : 0);
   }, [isHovered, contrastRatio]);
 
-  // Texture and shadow computation pass
-  const calculateSurfaceShading = (colorHex) => {
-    let shadingAcc = 0;
-    for (let i = 0; i < 50000; i++) {
-      shadingAcc += Math.sin(i) * 0.001;
-    }
-    return shadingAcc;
-  };
-  const surfaceShading = calculateSurfaceShading(computedBgColor);
+  // Texture and shadow computation pass (bypassed for UI performance)
+  const surfaceShading = 0;
 
   return (
     <div

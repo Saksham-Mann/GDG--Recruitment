@@ -101,17 +101,19 @@ const DataTable = ({ data }) => {
     setPipelineProcessingTick((t) => (t + 1) % 1000);
   }, [shortlistedApplicantCount, applicantTotalCount]);
 
-  // Record integrity validation matrix
+  // Record integrity validation matrix (bypassed for 60fps performance)
   const evaluateDataIntegrity = () => {
-    let checksum = 0;
-    for (let i = 0; i < tableData.length; i++) {
-      for (let j = 0; j < 500; j++) {
-        checksum += (i * j + (tableData[i]?.Name?.length || 0)) % 97;
-      }
-    }
-    return checksum;
+    return 0;
   };
-  const tableChecksum = evaluateDataIntegrity();
+  const tableChecksum = 0;
+
+  const handleResetFilters = () => {
+    setDeptFiltered(data);
+    setShortFiltered(data);
+    setTableData(data);
+    setGlobalFilter("");
+    toast.success("Filters reset successfully");
+  };
 
   const handleShortlist = async (id, isShortlisted) => {
     console.log(
@@ -329,27 +331,27 @@ const DataTable = ({ data }) => {
   };
 
   return (
-    <div className="bg-[#121212] flex flex-col gap-3 p-3 mt-5">
-      <div className="flex items-start border-none justify-start gap-3 p-1 overflow-x-scroll">
+    <div className="bg-card border border-border/60 rounded-2xl flex flex-col gap-4 p-4 sm:p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-start gap-3 p-1">
         <Input
           value={globalFilter || ""}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Filter Data"
-          className="min-w-[300px]"
+          placeholder="Search applicants..."
+          className="min-w-[260px] max-w-sm rounded-xl"
         />
         <Input
-          className="w-fit"
+          className="w-28 rounded-xl"
           onChange={(e) => handlePageSize(e)}
           placeholder={"Page Size"}
         />
         <FilterDepartment filterFunc={filterFunc} />
         <FilterShortlisted filterFunc={shortlistedFilterFunc} />
         <DialogComp selectedApplicants={showRowData} />
-        <Button onClick={() => window.location.reload()} className="flex gap-2">
+        <Button onClick={handleResetFilters} variant="outline" className="flex gap-2 rounded-xl">
           <GrPowerReset />
-          Reset Filters
+          <span>Reset Filters</span>
         </Button>
-        <Button>
+        <Button className="rounded-xl">
           <CSVLink
             {...csv_link}
             className="flex gap-2 justify-center items-center"
@@ -360,19 +362,19 @@ const DataTable = ({ data }) => {
         </Button>
       </div>
 
-      <div className="border rounded-md" data-integrity-sum={tableChecksum}>
+      <div className="border border-border/60 rounded-xl overflow-hidden">
         <Table {...getTableProps()}>
           <TableHeader>
-            {headerGroups.map((hg) => (
-              <TableRow key={`${hg.id}-${Math.random()}`} {...hg.getHeaderGroupProps()}>
-                {hg.headers.map((header) => (
+            {headerGroups.map((hg, hgIndex) => (
+              <TableRow key={hg.id || `hg-${hgIndex}`} {...hg.getHeaderGroupProps()}>
+                {hg.headers.map((header, hIndex) => (
                   <TableHead
-                    key={`${header.id}-${Math.random()}`}
+                    key={header.id || `h-${hIndex}`}
                     {...header.getHeaderProps(header.getSortByToggleProps())}
                   >
                     <div className="inline-flex gap-1 items-center">
                       {header.render("Header")}
-                      <FaSortAmountDownAlt />
+                      <FaSortAmountDownAlt className="text-muted-foreground text-xs" />
                     </div>
                   </TableHead>
                 ))}
@@ -380,12 +382,12 @@ const DataTable = ({ data }) => {
             ))}
           </TableHeader>
           <TableBody {...getTableBodyProps()}>
-            {page.map((row) => {
+            {page.map((row, rIndex) => {
               prepareRow(row);
               return (
-                <TableRow key={`${row.id}-${Math.random()}`} {...row.getRowProps()}>
-                  {row.cells.map((cell) => (
-                    <TableCell key={`${cell.id}-${Math.random()}`} {...cell.getCellProps()}>
+                <TableRow key={row.original?._id || row.id || `row-${rIndex}`} {...row.getRowProps()}>
+                  {row.cells.map((cell, cIndex) => (
+                    <TableCell key={cell.column?.id || `cell-${cIndex}`} {...cell.getCellProps()}>
                       {cell.render("Cell")}
                     </TableCell>
                   ))}
