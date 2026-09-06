@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 
+import { Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+
 export default function SignOutPage() {
   const router = useRouter();
 
@@ -25,8 +28,18 @@ export default function SignOutPage() {
   }, [router]);
 
   return (
-    <div>
-      <p>Signing out...</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+      <Card className="flex flex-col items-center gap-4 p-8 max-w-sm text-center shadow-lg border-border/60 bg-card/80 backdrop-blur-md rounded-2xl">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-bold tracking-tight text-foreground">Signing Out</h2>
+          <p className="text-xs text-muted-foreground">
+            Please wait while your session is securely terminated...
+          </p>
+        </div>
+      </Card>
     </div>
   );
 } 
