@@ -51,6 +51,20 @@ export const metadata = {
     description:
       "Join the Google Developer Groups chapter. Apply for Technical, Design, Management, and Outreach tracks.",
   },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "32x32", type: "image/x-icon" },
+      { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", type: "image/x-icon" },
+    ],
+    apple: [
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "180x180" },
+    ],
+  },
 };
 
 export default function RootLayout({ children }) {

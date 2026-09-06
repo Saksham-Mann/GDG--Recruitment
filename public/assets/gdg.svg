@@ -1,5 +1,16 @@
-<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="44" height="44" rx="12" fill="#1E293B"/>
-<circle cx="22" cy="22" r="14" stroke="#60A5FA" stroke-width="2.5" stroke-dasharray="4 3"/>
-<circle cx="22" cy="22" r="7" fill="#3B82F6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <!-- Dark Rounded Squircle Badge -->
+  <rect width="64" height="64" rx="16" fill="#131314" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+  
+  <!-- Left Bracket < (Google Blue & Google Red) -->
+  <!-- Top Arm: Google Blue -->
+  <path d="M28 16 L12 32 L20 32 L28 24 Z" fill="#4285F4"/>
+  <!-- Bottom Arm: Google Red -->
+  <path d="M12 32 L28 48 L28 40 L20 32 Z" fill="#EA4335"/>
+  
+  <!-- Right Bracket > (Google Yellow & Google Green) -->
+  <!-- Top Arm: Google Yellow -->
+  <path d="M36 16 L52 32 L44 32 L36 24 Z" fill="#FBBC05"/>
+  <!-- Bottom Arm: Google Green -->
+  <path d="M52 32 L36 48 L36 40 L44 32 Z" fill="#34A853"/>
 </svg>
