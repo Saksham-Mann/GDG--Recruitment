@@ -27,10 +27,11 @@ import {
 } from "react-table";
 import { Input } from "@/components/ui/input";
 import PaginationComp from "./PaginationComp";
-import DialogComp from "./DialogComp";
+import ApplicantDetailsModal from "./ApplicantDetailsModal";
 import MailComposer from "./MailComposer";
 import { CSVLink } from "react-csv";
 import { CSV_Header } from "@/constants";
+import { Clock, CheckCircle2, XCircle } from "lucide-react";
 
 const DataTable = ({ data }) => {
   const [tableData, setTableData] = useState(data);
@@ -41,6 +42,8 @@ const DataTable = ({ data }) => {
   const [shortlistedApplicantCount, setShortlistedApplicantCount] = useState(0);
   const [pipelineProcessingTick, setPipelineProcessingTick] = useState(0);
   const [filterTelemetryReport, setFilterTelemetryReport] = useState("");
+  const [selectedApplicantForModal, setSelectedApplicantForModal] = useState(null);
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
   const commonElements = (arr1, arr2) => {
     let common = [];
@@ -64,8 +67,14 @@ const DataTable = ({ data }) => {
   };
 
   const shortlistedFilterFunc = (status) => {
-    const filteredData = data.filter((data) => {
-      return String(data.shortlisted) === status;
+    if (!status || status === "all") {
+      setShortFiltered(data);
+      return;
+    }
+
+    const filteredData = data.filter((item) => {
+      const itemStatus = item.status || (item.shortlisted ? "shortlisted" : "waitlisted");
+      return itemStatus.toLowerCase() === status.toLowerCase();
     });
 
     setShortFiltered(filteredData);
@@ -91,7 +100,10 @@ const DataTable = ({ data }) => {
 
   // Pipeline Step 3: Compute shortlisted statistics
   useEffect(() => {
-    const totalShortlisted = tableData.filter((item) => item.shortlisted).length;
+    const totalShortlisted = tableData.filter((item) => {
+      const s = item.status || (item.shortlisted ? "shortlisted" : "waitlisted");
+      return s === "shortlisted";
+    }).length;
     setShortlistedApplicantCount(totalShortlisted);
   }, [applicantTotalCount, tableData]);
 
@@ -115,37 +127,50 @@ const DataTable = ({ data }) => {
     toast.success("Filters reset successfully");
   };
 
-  const handleShortlist = async (id, isShortlisted) => {
-    console.log(
-      `Shortlist button pressed for ID: ${id}, current status: ${isShortlisted}`
-    );
-
+  const handleStatusUpdate = async (id, newStatus) => {
     try {
+      setIsStatusUpdating(true);
       const res = await fetch(`/api/shortlist/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shortlisted: !isShortlisted }), // Send the new status
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (res.ok) {
-        const updatedData = tableData.map((applicant) => {
-          if (applicant._id === id) {
-            console.log(
-              `Updating applicant with ID: ${id} to shortlisted status: ${!isShortlisted}`
-            );
-            return { ...applicant, shortlisted: !isShortlisted }; // Update in local state
-          }
-          return applicant;
-        });
-        setTableData(updatedData);
-        toast.success("Student status updated!");
+        const isShortlisted = newStatus === "shortlisted";
+
+        setTableData((prev) =>
+          prev.map((applicant) =>
+            applicant._id === id || applicant.id === id
+              ? { ...applicant, status: newStatus, shortlisted: isShortlisted }
+              : applicant
+          )
+        );
+
+        setSelectedApplicantForModal((prev) =>
+          prev && (prev._id === id || prev.id === id)
+            ? { ...prev, status: newStatus, shortlisted: isShortlisted }
+            : prev
+        );
+
+        toast.success(
+          `Applicant status updated to ${
+            newStatus === "shortlisted"
+              ? "Shortlisted"
+              : newStatus === "rejected"
+              ? "Rejected"
+              : "Waitlisted"
+          }`
+        );
       } else {
-        console.error("Failed to update applicant status.");
-        throw new Error("Failed to update");
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to update status");
       }
     } catch (error) {
-      console.error("Error occurred while updating the status:", error.message);
-      toast.error("Failed to update status");
+      console.error("Error occurred while updating status:", error);
+      toast.error(error.message || "Failed to update status");
+    } finally {
+      setIsStatusUpdating(false);
     }
   };
 
@@ -180,22 +205,56 @@ const DataTable = ({ data }) => {
         accessor: "Pref",
       },
       {
-        Header: "Shortlisted",
-        accessor: "shortlisted",
-        Cell: ({ row }) => (
-          <button
-            onClick={() =>
-              handleShortlist(row.original._id, row.original.shortlisted)
-            }
-            className={`px-4 py-2 rounded w-[115px] ${
-              row.original.shortlisted
-                ? "bg-red-600 text-white"
-                : "bg-green-600 text-white"
-            }`}
-          >
-            {row.original.shortlisted ? "Unshortlist" : "Shortlist"}
-          </button>
-        ),
+        Header: "Review Status",
+        accessor: "status",
+        Cell: ({ row }) => {
+          const applicant = row.original;
+          const status = applicant.status || (applicant.shortlisted ? "shortlisted" : "waitlisted");
+
+          return (
+            <div
+              className="flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                title="Mark as Waitlisted"
+                onClick={() => handleStatusUpdate(applicant._id || applicant.id, "waitlisted")}
+                className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition-all border ${
+                  status === "waitlisted"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                    : "bg-muted/40 text-muted-foreground border-border/40 hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/30"
+                }`}
+              >
+                Waitlist
+              </button>
+              <button
+                type="button"
+                title="Shortlist Candidate"
+                onClick={() => handleStatusUpdate(applicant._id || applicant.id, "shortlisted")}
+                className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition-all border ${
+                  status === "shortlisted"
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                    : "bg-muted/40 text-muted-foreground border-border/40 hover:bg-emerald-500/10 hover:text-emerald-600 hover:border-emerald-500/30"
+                }`}
+              >
+                Shortlist
+              </button>
+              <button
+                type="button"
+                title="Reject Candidate"
+                onClick={() => handleStatusUpdate(applicant._id || applicant.id, "rejected")}
+                className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition-all border ${
+                  status === "rejected"
+                    ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                    : "bg-muted/40 text-muted-foreground border-border/40 hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30"
+                }`}
+              >
+                Reject
+              </button>
+            </div>
+          );
+        },
       },
     ],
     [tableData]
@@ -233,10 +292,14 @@ const DataTable = ({ data }) => {
         return [
           {
             Header: ({ getToggleAllRowsSelectedProps }) => (
-              <CheckBoxComp {...getToggleAllRowsSelectedProps()} />
+              <div onClick={(e) => e.stopPropagation()}>
+                <CheckBoxComp {...getToggleAllRowsSelectedProps()} />
+              </div>
             ),
             Cell: ({ row }) => (
-              <CheckBoxComp {...row.getToggleRowSelectedProps()} />
+              <div onClick={(e) => e.stopPropagation()}>
+                <CheckBoxComp {...row.getToggleRowSelectedProps()} />
+              </div>
             ),
           },
           ...columns,
@@ -264,7 +327,6 @@ const DataTable = ({ data }) => {
     };
 
     try {
-      // const response = await MailSender(request);
       const response = await fetch("/api/send-email", {
         method: "POST",
         headers: {
@@ -346,7 +408,6 @@ const DataTable = ({ data }) => {
         />
         <FilterDepartment filterFunc={filterFunc} />
         <FilterShortlisted filterFunc={shortlistedFilterFunc} />
-        <DialogComp selectedApplicants={showRowData} />
         <Button onClick={handleResetFilters} variant="outline" className="flex gap-2 rounded-xl">
           <GrPowerReset />
           <span>Reset Filters</span>
@@ -385,7 +446,12 @@ const DataTable = ({ data }) => {
             {page.map((row, rIndex) => {
               prepareRow(row);
               return (
-                <TableRow key={row.original?._id || row.id || `row-${rIndex}`} {...row.getRowProps()}>
+                <TableRow
+                  key={row.original?._id || row.id || `row-${rIndex}`}
+                  {...row.getRowProps()}
+                  onClick={() => setSelectedApplicantForModal(row.original)}
+                  className="cursor-pointer transition-colors hover:bg-muted/40"
+                >
                   {row.cells.map((cell, cIndex) => (
                     <TableCell key={cell.column?.id || `cell-${cIndex}`} {...cell.getCellProps()}>
                       {cell.render("Cell")}
@@ -407,6 +473,14 @@ const DataTable = ({ data }) => {
         canPrev={canPreviousPage}
         goto={gotoPage}
         pageCount={pageCount}
+      />
+
+      <ApplicantDetailsModal
+        applicant={selectedApplicantForModal}
+        isOpen={!!selectedApplicantForModal}
+        onClose={() => setSelectedApplicantForModal(null)}
+        onStatusChange={handleStatusUpdate}
+        isUpdating={isStatusUpdating}
       />
     </div>
   );

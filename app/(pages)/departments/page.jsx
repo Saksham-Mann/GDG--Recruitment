@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useSubmissions } from "@/components/SubmissionsProvider";
+import { authClient } from "@/lib/auth-client";
+import CandidateStatusCard from "@/components/CandidateStatusCard";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -21,14 +23,44 @@ const departments = reviews;
 
 const DepartmentsListPage = () => {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+
   const [selectedDepartments, setSelectedDepartments] = useState([]);
   const { submittedDepartments } = useSubmissions();
   const [selectionNotice, setSelectionNotice] = useState(null);
+  const [candidateApplications, setCandidateApplications] = useState([]);
+  const [candidateOverallStatus, setCandidateOverallStatus] = useState("waitlisted");
 
   const [selectedCount, setSelectedCount] = useState(0);
   const [remainingSlots, setRemainingSlots] = useState(2);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isContinueDisabled, setIsContinueDisabled] = useState(true);
+
+  // Fetch candidate applications and review status
+  useEffect(() => {
+    if (!user?.email) return;
+    let isActive = true;
+
+    async function fetchCandidateStatus() {
+      try {
+        const res = await fetch(`/api/check-applications?email=${encodeURIComponent(user.email)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!isActive) return;
+          if (data.applications && data.applications.length > 0) {
+            setCandidateApplications(data.applications);
+            setCandidateOverallStatus(data.overallStatus || "waitlisted");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load candidate status:", err);
+      }
+    }
+
+    fetchCandidateStatus();
+    return () => { isActive = false; };
+  }, [user?.email, submittedDepartments]);
 
   // Synchronize count and remaining slots
   useEffect(() => {
@@ -133,6 +165,17 @@ const DepartmentsListPage = () => {
               </Button>
             </div>
           </div>
+
+          {/* Candidate Application Review Status Card */}
+          {candidateApplications.length > 0 && (
+            <div className="mt-6">
+              <CandidateStatusCard
+                status={candidateOverallStatus}
+                applications={candidateApplications}
+                candidateName={user?.name || ""}
+              />
+            </div>
+          )}
 
           {/* Inline Department Limit Warning / Feedback Banner */}
           {selectionNotice && (

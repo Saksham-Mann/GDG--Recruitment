@@ -160,6 +160,7 @@ export async function POST(req) {
           validated["Why do you want to join Organization Name?"] || "",
         Department: normalizedDept,
         Questions: cleanQuestions,
+        status: "waitlisted",
         shortlisted: false,
         createdAt: new Date(),
       });

@@ -27,11 +27,16 @@ export async function GET() {
 
     const db = await connect();
     const snapshot = await db.collection("formData").get();
-    const applicants = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      _id: doc.id,
-      ...serializeFirestoreData(doc.data()),
-    }));
+    const applicants = snapshot.docs.map((doc) => {
+      const data = serializeFirestoreData(doc.data());
+      const status = data.status || (data.shortlisted ? "shortlisted" : "waitlisted");
+      return {
+        id: doc.id,
+        _id: doc.id,
+        ...data,
+        status,
+      };
+    });
 
     return NextResponse.json({ applicants }, { status: 200 });
   } catch (error) {

@@ -28,12 +28,24 @@ export async function PATCH(req, { params }) {
         }
 
         const body = await req.json();
-        if (typeof body.shortlisted !== "boolean") {
+        const VALID_STATUSES = ["waitlisted", "shortlisted", "rejected"];
+        let targetStatus = body.status;
+
+        if (!targetStatus && typeof body.shortlisted === "boolean") {
+            targetStatus = body.shortlisted ? "shortlisted" : "waitlisted";
+        }
+
+        if (!targetStatus || !VALID_STATUSES.includes(targetStatus)) {
             return NextResponse.json(
-                { success: false, message: "Invalid payload: 'shortlisted' must be a boolean" },
+                {
+                    success: false,
+                    message: "Invalid payload: 'status' must be one of 'waitlisted', 'shortlisted', or 'rejected'",
+                },
                 { status: 400 }
             );
         }
+
+        const isShortlisted = targetStatus === "shortlisted";
 
         const db = await connect();
         const docRef = db.collection('formData').doc(id);
@@ -44,7 +56,8 @@ export async function PATCH(req, { params }) {
         }
 
         await docRef.update({
-            shortlisted: body.shortlisted,
+            status: targetStatus,
+            shortlisted: isShortlisted,
             updatedAt: new Date(),
         });
 
@@ -52,7 +65,8 @@ export async function PATCH(req, { params }) {
             id: snapshot.id,
             _id: snapshot.id,
             ...serializeFirestoreData(snapshot.data()),
-            shortlisted: body.shortlisted,
+            status: targetStatus,
+            shortlisted: isShortlisted,
         };
 
         return NextResponse.json({ success: true, data: applicant }, { status: 200 });

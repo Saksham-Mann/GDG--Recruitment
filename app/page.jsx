@@ -7,6 +7,7 @@ import Departments from "@/components/Departments";
 import Footer from "@/components/Footer";
 import PopupComp from "@/components/PopupComp";
 import { authClient } from "@/lib/auth-client";
+import CandidateStatusCard from "@/components/CandidateStatusCard";
 
 const popupConfig = {
   header: "Recruitment Notice",
@@ -52,6 +53,33 @@ const Home = () => {
   };
 
   const user = session?.user;
+  const [candidateApplications, setCandidateApplications] = useState([]);
+  const [candidateOverallStatus, setCandidateOverallStatus] = useState("waitlisted");
+
+  // Fetch candidate applications if logged in
+  useEffect(() => {
+    if (!user?.email) return;
+    let isActive = true;
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch(`/api/check-applications?email=${encodeURIComponent(user.email)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!isActive) return;
+          if (data.applications && data.applications.length > 0) {
+            setCandidateApplications(data.applications);
+            setCandidateOverallStatus(data.overallStatus || "waitlisted");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load user status:", err);
+      }
+    }
+
+    fetchStatus();
+    return () => { isActive = false; };
+  }, [user?.email]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -65,6 +93,19 @@ const Home = () => {
           />
         )}
         <Hero />
+
+        {/* Candidate Review Status Card */}
+        {candidateApplications.length > 0 && (
+          <section className="py-8 border-t border-border/40 bg-muted/5">
+            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+              <CandidateStatusCard
+                status={candidateOverallStatus}
+                applications={candidateApplications}
+                candidateName={user?.name || ""}
+              />
+            </div>
+          </section>
+        )}
         <section className="py-16 border-t border-border/40 bg-muted/10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-10 text-center">
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">

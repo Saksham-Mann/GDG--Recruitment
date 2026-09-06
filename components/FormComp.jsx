@@ -22,6 +22,15 @@ import { toast } from "sonner";
 import CountdownTimer from "./common/CountdownTimer";
 import { useSubmissions } from "@/components/SubmissionsProvider";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
+import CandidateStatusCard from "@/components/CandidateStatusCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "./ui/dialog";
 import { cn } from "@/lib/utils";
 
 const normaliseQuestion = (question) => (
@@ -43,6 +52,11 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
   const [submitError, setSubmitError] = useState("");
   const [limitReached, setLimitReached] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingFormValues, setPendingFormValues] = useState(null);
+  const [submissionSuccessData, setSubmissionSuccessData] = useState(null);
+  const [liveApplications, setLiveApplications] = useState([]);
+  const [liveOverallStatus, setLiveOverallStatus] = useState("waitlisted");
   const [nameInputVal, setNameInputVal] = useState("");
   const [regNumberInputVal, setRegNumberInputVal] = useState("");
   const [emailInputVal, setEmailInputVal] = useState("");
@@ -79,8 +93,14 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
       const checkResponse = await fetch(
         `/api/check-applications?email=${encodeURIComponent(userEmail)}`
       );
-      const { count } = await checkResponse.json();
-      if (count >= 2) {
+      const data = await checkResponse.json();
+      if (data?.applications) {
+        setLiveApplications(data.applications);
+      }
+      if (data?.overallStatus && data.overallStatus !== "none") {
+        setLiveOverallStatus(data.overallStatus);
+      }
+      if (data?.count >= 2) {
         setLimitReached(true);
         setIsSubmitting(false);
       }
@@ -126,11 +146,18 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
       .min(1, "Phone number is required.")
       .regex(/^\d{10}$/, "Invalid phone number. Must contain exactly 10 digits without country code."),
     "Year of Study": z.string().optional(),
-    "Why do you want to join Organization Name?": z.string().max(3000, "Response must not exceed 3000 characters.").optional(),
+    "Why do you want to join Organization Name?": z
+      .string({ required_error: "Please tell us why you want to join Google Developer Groups." })
+      .trim()
+      .min(1, "Please tell us why you want to join Google Developer Groups.")
+      .max(3000, "Response must not exceed 3000 characters."),
   };
 
   questionData.forEach((qd) => {
-    schemaObj[qd] = z.string().optional();
+    schemaObj[qd] = z
+      .string({ required_error: "This answer is required. Please provide a response." })
+      .trim()
+      .min(1, "This question is required. Please provide a response.");
   });
 
   const formSchema = z.object(schemaObj);
@@ -256,7 +283,19 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
   // User is authenticated
   const userEmail = user?.email;
 
-  const handleSubmit = async (values) => {
+  const handleInitiateSubmit = (values) => {
+    setSubmitError("");
+    setPendingFormValues(values);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSubmission = async () => {
+    if (!pendingFormValues) return;
+    setShowConfirmModal(false);
+    await executeSubmission(pendingFormValues);
+  };
+
+  const executeSubmission = async (values) => {
     setIsSubmitting(true);
     setSubmitError("");
 
@@ -264,7 +303,14 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
 
     if (!pendingDepartments.length) {
       setIsSubmitting(false);
-      router.push("/departments");
+      setSubmissionSuccessData({
+        candidateName: values.Name,
+        applications: submittedDepartments.map((dept) => ({
+          department: dept,
+          status: "waitlisted",
+          createdAt: new Date().toISOString(),
+        })),
+      });
       return;
     }
 
@@ -328,7 +374,15 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
             localStorage.removeItem(draftKey);
           } catch {}
         }
-        router.push("/departments");
+        setSubmissionSuccessData({
+          candidateName: values.Name,
+          applications: completed.map((dept) => ({
+            department: dept,
+            status: "waitlisted",
+            createdAt: new Date().toISOString(),
+          })),
+        });
+        toast.success("Application submitted successfully!");
       }
     } catch (err) {
       console.error("Submission error:", err);
@@ -343,25 +397,38 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
     return <FormSkeleton />;
   }
 
-  if (limitReached) {
+  // Display post-submission success view
+  if (submissionSuccessData) {
     return (
-      <div className="mx-auto max-w-md py-16 px-4 text-center animate-in fade-in-0 duration-200 ease-out motion-reduce:animate-none">
-        <Card className="rounded-2xl border-border/60 bg-card/60 p-6 shadow-md">
-          <CardHeader>
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-2">
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <CardTitle className="text-2xl font-bold">Applications Completed</CardTitle>
-            <CardDescription className="pt-2 text-sm text-muted-foreground">
-              You have already submitted applications for these departments or reached the 2-application maximum for this cycle.
-            </CardDescription>
-          </CardHeader>
-          <div className="pt-4 flex justify-center">
-            <Button onClick={() => router.push("/departments")} className="rounded-full px-6 font-medium">
-              View Your Departments
-            </Button>
-          </div>
-        </Card>
+      <div className="mx-auto max-w-3xl py-12 px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+        <CandidateStatusCard
+          status="waitlisted"
+          isPostSubmission={true}
+          applications={submissionSuccessData.applications}
+          candidateName={submissionSuccessData.candidateName}
+        />
+      </div>
+    );
+  }
+
+  // Display status card if user has already reached submission limit
+  if (limitReached) {
+    const displayApps =
+      liveApplications.length > 0
+        ? liveApplications
+        : submittedDepartments.map((dept) => ({
+            department: dept,
+            status: "waitlisted",
+          }));
+
+    return (
+      <div className="mx-auto max-w-3xl py-12 px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+        <CandidateStatusCard
+          status={liveOverallStatus || "waitlisted"}
+          isPostSubmission={false}
+          applications={displayApps}
+          candidateName={user?.name || ""}
+        />
       </div>
     );
   }
@@ -398,7 +465,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit, handleInvalid)} noValidate className="space-y-8">
+        <form onSubmit={form.handleSubmit(handleInitiateSubmit, handleInvalid)} noValidate className="space-y-8">
           {/* Section 1: Candidate Details */}
           <Card className="rounded-2xl border-border/60 bg-card/70 backdrop-blur-sm shadow-sm">
             <CardHeader className="pb-4">
@@ -547,7 +614,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel className={fieldState.error ? "text-red-500 font-semibold" : ""}>
-                      Why do you want to join Google Developer Groups?
+                      Why do you want to join Google Developer Groups? <span className="text-red-500" aria-hidden="true">*</span>
                     </FormLabel>
                     <FormControl>
                       <Textarea
@@ -614,6 +681,66 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
           </div>
         </form>
       </Form>
+
+      {/* Submission Confirmation Modal Dialog */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <DialogContent className="max-w-md sm:max-w-md rounded-2xl p-6">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary mb-1">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-xl font-bold">
+              Confirm Application Submission
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              Are you sure you want to submit your application? You won't be able to edit your answers after this.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Submitting for
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {departmentNames.map((dept) => (
+                <span
+                  key={dept}
+                  className="inline-flex items-center rounded-lg bg-background px-2.5 py-1 text-xs font-semibold text-foreground border border-border/60 shadow-xs"
+                >
+                  {dept}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-row items-center justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowConfirmModal(false)}
+              disabled={isSubmitting}
+              className="rounded-full px-5"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmSubmission}
+              disabled={isSubmitting}
+              className="rounded-full px-6 font-semibold shadow-md"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                <span>Confirm & Submit</span>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -650,7 +777,7 @@ const renderDepartmentQuestions = (department, QuestionnaireData, form) => {
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel className={cn("text-sm font-medium leading-relaxed", fieldState.error && "text-red-500 font-semibold")}>
-                    {question.name}
+                    {question.name} <span className="text-red-500" aria-hidden="true">*</span>
                   </FormLabel>
                   <FormControl>
                     {isCompact ? (

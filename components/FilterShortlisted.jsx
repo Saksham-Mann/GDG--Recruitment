@@ -22,12 +22,20 @@ import {
 
 let frameworks = [
     {
-        value: "true",
-        label: "Yes",
+        value: "all",
+        label: "All Statuses",
     },
     {
-        value: "false",
-        label: "No",
+        value: "waitlisted",
+        label: "Waitlisted",
+    },
+    {
+        value: "shortlisted",
+        label: "Shortlisted",
+    },
+    {
+        value: "rejected",
+        label: "Rejected",
     },
 ];
 
@@ -42,16 +50,16 @@ export default function FilterShortlisted({ filterFunc }) {
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-[200px] justify-between"
+                    className="w-[200px] justify-between rounded-xl"
                 >
                     {value ? (
                         frameworks.find(
                             (framework) => framework.value === value
                         )?.label
                     ) : (
-                        <div className="flex gap-3 items-center justify-center">
+                        <div className="flex gap-2 items-center justify-center">
                             <IoFilter />
-                            Shortlisted
+                            <span>Status Filter</span>
                         </div>
                     )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
