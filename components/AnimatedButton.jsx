@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import AnimatedGradientText from "@/components/magicui/animated-gradient-text";
 import Link from "next/link";
 
-export default async function AnimatedButton() {
+export default function AnimatedButton() {
   return (
     <Link
       href={`/departments`}

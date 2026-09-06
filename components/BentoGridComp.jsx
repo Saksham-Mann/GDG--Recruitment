@@ -558,7 +558,7 @@ reviews.forEach((r, index) => {
             f.name = "Photography / Video Editing";
         }
         f.description = r.body;
-        f.href = r.id;
+        f.href = `/join/${r.id}`;
         f.cta = "Join Department";
     } else {
         if (used === 0) {
@@ -577,7 +577,7 @@ reviews.forEach((r, index) => {
     }
 });
 
-export default async function BentoGridComp() {
+export default function BentoGridComp() {
     return (
         <div className="flex flex-col gap-4 bg-black text-white p-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

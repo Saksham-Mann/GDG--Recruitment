@@ -40,17 +40,21 @@ const PaginationComp = ({
         Page {pageIndex + 1} of {pages}
       </div>
       <Pagination>
-        <PaginationContent className="cursor-pointer">
+        <PaginationContent className="cursor-pointer select-none">
           <PaginationItem
-            className={!canPrev ? "opacity-50 cursor-not-allowed" : ""}
-            onClick={() => goto(0)}
+            className={!canPrev ? "opacity-50 cursor-not-allowed pointer-events-none" : "hover:text-foreground"}
+            aria-disabled={!canPrev}
+            onClick={() => canPrev && goto(0)}
           >
-            <HiOutlineChevronDoubleLeft />
+            <span className="flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-xs">
+              <HiOutlineChevronDoubleLeft className="h-4 w-4" />
+            </span>
           </PaginationItem>
           <PaginationItem
-            className={!canPrev ? "opacity-50 cursor-not-allowed" : ""}
+            className={!canPrev ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}
+            aria-disabled={!canPrev}
           >
-            <PaginationPrevious onClick={() => previousPage()} />
+            <PaginationPrevious onClick={() => canPrev && previousPage()} />
           </PaginationItem>
           {dispPageNum.map((num) => (
             <PaginationItem key={num}>
@@ -70,15 +74,19 @@ const PaginationComp = ({
             </PaginationItem>
           ))}
           <PaginationItem
-            className={!canNext ? "opacity-50 cursor-not-allowed" : ""}
+            className={!canNext ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}
+            aria-disabled={!canNext}
           >
-            <PaginationNext onClick={() => nextPage()} />
+            <PaginationNext onClick={() => canNext && nextPage()} />
           </PaginationItem>
           <PaginationItem
-            className={!canNext ? "opacity-50 cursor-not-allowed" : ""}
-            onClick={() => goto(pageCount - 1)}
+            className={!canNext ? "opacity-50 cursor-not-allowed pointer-events-none" : "hover:text-foreground"}
+            aria-disabled={!canNext}
+            onClick={() => canNext && goto(pageCount - 1)}
           >
-            <HiOutlineChevronDoubleRight />
+            <span className="flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-xs">
+              <HiOutlineChevronDoubleRight className="h-4 w-4" />
+            </span>
           </PaginationItem>
         </PaginationContent>
       </Pagination>

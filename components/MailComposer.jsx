@@ -458,6 +458,7 @@ export default function MailComposer({ recipients, handleRowSelection }) {
                             )}
                             <Button
                                 type="submit"
+                                disabled={!confirm}
                                 onClick={() => {
                                     if (confirm) {
                                         handleRowSelection(payloadData);
@@ -465,8 +466,9 @@ export default function MailComposer({ recipients, handleRowSelection }) {
                                     }
                                 }}
                                 className={
-                                    !confirm &&
-                                    "opacity-[40%] cursor-not-allowed text-gray-600 hover:opacity-[40%]"
+                                    !confirm
+                                        ? "opacity-40 cursor-not-allowed text-gray-500 hover:opacity-40"
+                                        : ""
                                 }
                             >
                                 Send Mail
@@ -474,11 +476,10 @@ export default function MailComposer({ recipients, handleRowSelection }) {
                         </DialogFooter>
                     </div>
                 ) : (
-                    <p>
-                        <p className="flex gap-3 items-center justify-start font-light text-md text-red-500">
-                            <CiWarning /> No recipients selected
-                        </p>
-                    </p>
+                    <div className="flex gap-3 items-center justify-start font-light text-md text-red-500 py-4">
+                        <CiWarning className="h-5 w-5 shrink-0" />
+                        <span>No recipients selected</span>
+                    </div>
                 )}
             </DialogContent>
         </Dialog>

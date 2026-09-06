@@ -15,7 +15,7 @@ export default function BlurFadeGrid() {
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 ">
       {reviews.map((review) => (
         <BlurFade key={review.id} delay={0.025} inView>
-          <Link key={review.id} href={`/${review.id}`}>
+          <Link key={review.id} href={`/join/${review.id}`}>
             <MagicCardComp review={review} />
           </Link>
         </BlurFade>
