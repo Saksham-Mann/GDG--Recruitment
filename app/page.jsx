@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import NavBar from "@/components/NavBar";
 import Hero from "@/components/Hero";
 import Departments from "@/components/Departments";
@@ -18,14 +18,37 @@ const popupConfig = {
   ],
 };
 
+const NOTICE_STORAGE_KEY = "gdg_recruitment_notice_dismissed";
+
 const Home = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Session hook from Better Auth
   const { data: session, isPending } = authClient.useSession();
 
+  // Check sessionStorage on client mount to prevent re-prompting within the same session
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const hasDismissed = sessionStorage.getItem(NOTICE_STORAGE_KEY);
+        if (!hasDismissed) {
+          setIsDialogOpen(true);
+        }
+      }
+    } catch {
+      setIsDialogOpen(true);
+    }
+  }, []);
+
   const handleDialogClose = () => {
     setIsDialogOpen(false);
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(NOTICE_STORAGE_KEY, "true");
+      }
+    } catch {
+      // In case browser restricts sessionStorage in incognito/third-party contexts
+    }
   };
 
   const user = session?.user;
