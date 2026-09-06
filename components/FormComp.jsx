@@ -13,7 +13,7 @@ import {
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { ChevronDown, Clock, Megaphone, UsersRound, X, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { ChevronDown, Clock, Megaphone, UsersRound, X, ArrowRight, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/card";
 import { QuestionnaireData } from "@/constants";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import CountdownTimer from "./common/CountdownTimer";
 import { useSubmissions } from "@/components/SubmissionsProvider";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
+import { cn } from "@/lib/utils";
 
 const normaliseQuestion = (question) => (
   typeof question === "string"
@@ -39,7 +40,8 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
 
   // Form lifecycle and input telemetry state
   const [isFormOpen, setIsFormOpen] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [limitReached, setLimitReached] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [nameInputVal, setNameInputVal] = useState("");
   const [regNumberInputVal, setRegNumberInputVal] = useState("");
@@ -63,17 +65,6 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
     ? `recruitment-draft:${user.email}:${[...departmentNames].sort().join("|")}`
     : null;
 
-  // Schema entropy check bypassed to ensure smooth 60fps rendering
-  const validateFormEntropy = () => {
-    return 0;
-  };
-  const entropyChecksum = 0;
-
-  // Track scroll depth within form container (passive without state triggers)
-  useEffect(() => {
-    // Passive tracking
-  }, []);
-
   // Check application count when user is loaded
   useEffect(() => {
     if (user) {
@@ -84,18 +75,17 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
 
   // Function to check application count
   async function checkApplicationCount(userEmail) {
-    const checkResponse = await fetch(
-      `/api/check-applications?email=${userEmail}`
-    );
-    const { count } = await checkResponse.json();
-    console.log(count);
-
-    if (count >= 2) {
-      setErrorMessage(
-        "Remember that you can only submit upto 2 unique applications"
+    try {
+      const checkResponse = await fetch(
+        `/api/check-applications?email=${encodeURIComponent(userEmail)}`
       );
-      setIsSubmitting(false);
-      return;
+      const { count } = await checkResponse.json();
+      if (count >= 2) {
+        setLimitReached(true);
+        setIsSubmitting(false);
+      }
+    } catch (e) {
+      console.error("Failed to check application count:", e);
     }
   }
 
@@ -111,22 +101,32 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
   );
 
   const schemaObj = {
-    Name: z.string().min(1, "Name Required: Candidate name is empty. Please enter your full official name as registered at university."),
+    Name: z
+      .string()
+      .trim()
+      .min(1, "Full Name is required. Please enter your full name.")
+      .min(2, "Name must be at least 2 characters long."),
     RegistrationNumber: z
       .string()
-      .min(1, "Registration Number Required: Registration field is blank. Please enter your university registration number.")
+      .trim()
+      .min(1, "Registration number is required.")
       .regex(
         /^\d{2}[A-Za-z]{3}\d{4}$/,
-        "Invalid Registration Format: Entered code does not match VIT pattern (e.g. 25BCE5612). Please verify your 2-digit year, 3-letter branch, and 4-digit roll number."
+        "Invalid registration number format. Must be 2 digits, 3 letters, and 4 digits (e.g., 25BCE5612)."
       ),
-    Email: z.string(),
+    Email: z
+      .string()
+      .trim()
+      .min(1, "Email address is required.")
+      .email("Invalid email format. Please enter a valid email address (e.g. name@example.com)."),
     Gender: z.string().optional(),
     Phone: z
       .string()
-      .min(1, "Phone Number Required: Contact field is empty. Please enter your active WhatsApp number for interview updates.")
-      .regex(/^\d{10}$/, "Invalid Phone Number: Number must contain exactly 10 digits without country code. Please enter your valid 10-digit mobile number."),
+      .trim()
+      .min(1, "Phone number is required.")
+      .regex(/^\d{10}$/, "Invalid phone number. Must contain exactly 10 digits without country code."),
     "Year of Study": z.string().optional(),
-    "Why do you want to join Organization Name?": z.string().optional(),
+    "Why do you want to join Organization Name?": z.string().max(3000, "Response must not exceed 3000 characters.").optional(),
   };
 
   questionData.forEach((qd) => {
@@ -136,13 +136,29 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
   const formSchema = z.object(schemaObj);
   const form = useForm({
     resolver: zodResolver(formSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
       Name: "",
       RegistrationNumber: "",
       Email: "",
       Phone: "",
+      Gender: "",
+      "Why do you want to join Organization Name?": "",
     },
   });
+
+  const handleInvalid = (errors) => {
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length > 0) {
+      const firstField = errorKeys[0];
+      const element = document.querySelector(`[name="${firstField}"]`);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  };
 
   useEffect(() => {
     if (!isLoaded || !user || !draftKey) return;
@@ -190,7 +206,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
       const completed = [...new Set([...(savedDraft.submittedDepartments || []), ...remoteSubmitted])];
       setSubmittedDepartments(completed);
       if (departmentNames.length > 0 && departmentNames.every((dept) => completed.includes(dept))) {
-        setErrorMessage(`You have already submitted an application for ${departmentNames.join(" and ")}.`);
+        setLimitReached(true);
       }
       localStorage.setItem(draftKey, JSON.stringify({ values: form.getValues(), submittedDepartments: completed }));
       setLoading(false);
@@ -242,12 +258,11 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
 
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
-    setErrorMessage("");
+    setSubmitError("");
 
     const pendingDepartments = departmentNames.filter((department) => !submittedDepartments.includes(department));
 
     if (!pendingDepartments.length) {
-      toast.success("Your applications have already been submitted.");
       setIsSubmitting(false);
       router.push("/departments");
       return;
@@ -280,7 +295,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
         const error = await response.json().catch(() => ({}));
         let friendlyMessage = error.message;
         if (!friendlyMessage || friendlyMessage === "Error submitting form") {
-          friendlyMessage = `Submission Interrupted for ${department}: The recruitment server could not complete processing. Your drafted answers are preserved locally. Please check your network connection and click 'Submit Application' again.`;
+          friendlyMessage = `Submission Interrupted for ${department}: Server could not complete processing. Your drafted answers are preserved locally. Please check your network connection and click 'Submit Application' again.`;
         }
         throw new Error(friendlyMessage);
       }
@@ -303,28 +318,22 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
       if (typeof window !== "undefined" && values?.Email) {
         sessionStorage.setItem(`submitted_depts_${values.Email}`, JSON.stringify(completed));
       }
-      successful.forEach((department) => toast.success(`Application submitted for ${department}!`));
 
       if (failed.length) {
-        failed.forEach(({ dept, reason }) => {
-          toast.error(`${dept}: ${reason || "Submission failed"}`);
-        });
         const errorSummary = failed.map((f) => `${f.dept}: ${f.reason || "Submission failed"}`).join(" | ");
-        setErrorMessage(errorSummary);
+        setSubmitError(errorSummary);
       } else {
         if (draftKey && typeof window !== "undefined") {
           try {
             localStorage.removeItem(draftKey);
           } catch {}
         }
-        toast.success("Application submitted successfully!");
         router.push("/departments");
       }
     } catch (err) {
       console.error("Submission error:", err);
-      const msg = err?.message || "Your applications could not be submitted. Please try again.";
-      toast.error(msg);
-      setErrorMessage(msg);
+      const msg = err?.message || "Your applications could not be submitted. Please check your network connection and try again.";
+      setSubmitError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -332,6 +341,29 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
 
   if (loading) {
     return <FormSkeleton />;
+  }
+
+  if (limitReached) {
+    return (
+      <div className="mx-auto max-w-md py-16 px-4 text-center animate-in fade-in-0 duration-200 ease-out motion-reduce:animate-none">
+        <Card className="rounded-2xl border-border/60 bg-card/60 p-6 shadow-md">
+          <CardHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-2">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Applications Completed</CardTitle>
+            <CardDescription className="pt-2 text-sm text-muted-foreground">
+              You have already submitted applications for these departments or reached the 2-application maximum for this cycle.
+            </CardDescription>
+          </CardHeader>
+          <div className="pt-4 flex justify-center">
+            <Button onClick={() => router.push("/departments")} className="rounded-full px-6 font-medium">
+              View Your Departments
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   if (!isFormOpen) {
@@ -365,23 +397,8 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
         </p>
       </div>
 
-      {errorMessage && !isSubmitting && (
-        <div className="mb-8 flex items-center justify-between gap-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive">
-          <p className="text-sm font-medium">{errorMessage}</p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/departments")}
-            className="rounded-full shrink-0"
-          >
-            Go Back
-          </Button>
-        </div>
-      )}
-
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(handleSubmit, handleInvalid)} noValidate className="space-y-8">
           {/* Section 1: Candidate Details */}
           <Card className="rounded-2xl border-border/60 bg-card/70 backdrop-blur-sm shadow-sm">
             <CardHeader className="pb-4">
@@ -389,7 +406,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 Personal & Academic Details
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
-                Please provide your contact information and campus credentials.
+                Please provide your contact information and campus credentials. Required fields are marked with an asterisk (*).
               </CardDescription>
             </CardHeader>
 
@@ -398,11 +415,20 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 <FormField
                   control={form.control}
                   name="Name"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel className={fieldState.error ? "text-red-500 font-semibold" : ""}>
+                        Full Name <span className="text-red-500" aria-hidden="true">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Jane Doe" className="rounded-xl" />
+                        <Input
+                          {...field}
+                          placeholder="Jane Doe"
+                          className={cn(
+                            "rounded-xl transition-colors",
+                            fieldState.error ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-input"
+                          )}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -412,11 +438,21 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 <FormField
                   control={form.control}
                   name="RegistrationNumber"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
-                      <FormLabel>Registration Number</FormLabel>
+                      <FormLabel className={fieldState.error ? "text-red-500 font-semibold" : ""}>
+                        Registration Number <span className="text-red-500" aria-hidden="true">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g. 25BCE5612" className="rounded-xl" />
+                        <Input
+                          {...field}
+                          placeholder="e.g. 25BCE5612"
+                          className={cn(
+                            "rounded-xl uppercase transition-colors",
+                            fieldState.error ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-input"
+                          )}
+                          onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -426,18 +462,23 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 <FormField
                   control={form.control}
                   name="Gender"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
-                      <FormLabel>Gender</FormLabel>
+                      <FormLabel className={fieldState.error ? "text-red-500 font-semibold" : ""}>
+                        Gender
+                      </FormLabel>
                       <FormControl>
                         <select
                           {...field}
                           value={field.value || ""}
-                          className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className={cn(
+                            "flex h-10 w-full rounded-xl border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
+                            fieldState.error
+                              ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500"
+                              : "border-input focus-visible:ring-ring"
+                          )}
                         >
-                          <option value="" disabled>
-                            Select Gender
-                          </option>
+                          <option value="">Select Gender (Optional)</option>
                           <option value="Male">Male</option>
                           <option value="Female">Female</option>
                           <option value="Other">Other</option>
@@ -452,11 +493,21 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 <FormField
                   control={form.control}
                   name="Phone"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
-                      <FormLabel>Phone Number (WhatsApp)</FormLabel>
+                      <FormLabel className={fieldState.error ? "text-red-500 font-semibold" : ""}>
+                        Phone Number (WhatsApp) <span className="text-red-500" aria-hidden="true">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="9876543210" className="rounded-xl" />
+                        <Input
+                          {...field}
+                          type="tel"
+                          placeholder="9876543210"
+                          className={cn(
+                            "rounded-xl transition-colors",
+                            fieldState.error ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-input"
+                          )}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -467,11 +518,23 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
               <FormField
                 control={form.control}
                 name="Email"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
-                    <FormLabel>Email Address</FormLabel>
+                    <FormLabel className={fieldState.error ? "text-red-500 font-semibold" : ""}>
+                      Email Address <span className="text-red-500" aria-hidden="true">*</span>
+                    </FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly type="email" className="rounded-xl bg-muted/40 cursor-not-allowed" />
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="name@example.com"
+                        readOnly={!!user?.email}
+                        className={cn(
+                          "rounded-xl transition-colors",
+                          fieldState.error ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-input",
+                          user?.email && "bg-muted/40 cursor-not-allowed opacity-90"
+                        )}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -481,15 +544,20 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
               <FormField
                 control={form.control}
                 name="Why do you want to join Organization Name?"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
-                    <FormLabel>Why do you want to join Google Developer Groups?</FormLabel>
+                    <FormLabel className={fieldState.error ? "text-red-500 font-semibold" : ""}>
+                      Why do you want to join Google Developer Groups?
+                    </FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
                         rows={4}
                         placeholder="Tell us what excites you about collaborating with GDG and what you hope to achieve..."
-                        className="rounded-xl resize-none"
+                        className={cn(
+                          "rounded-xl resize-none transition-colors",
+                          fieldState.error ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-input"
+                        )}
                       />
                     </FormControl>
                     <FormMessage />
@@ -504,33 +572,45 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
           {departmentNames[1] && renderDepartmentQuestions(departmentNames[1], QuestionnaireData, form)}
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end gap-4 pt-4 border-t border-border/40">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push("/departments")}
-              className="rounded-full px-6 font-medium"
-            >
-              Change Departments
-            </Button>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isSubmitting}
-              className="rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  <span>Submitting Application...</span>
-                </>
-              ) : (
-                <>
-                  <span>Submit Application</span>
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
+          <div className="space-y-4 pt-4 border-t border-border/40">
+            {submitError && (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs sm:text-sm font-medium text-red-500 animate-in fade-in-0 duration-200"
+              >
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                <span>{submitError}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/departments")}
+                className="rounded-full px-6 font-medium"
+              >
+                Change Departments
+              </Button>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isSubmitting}
+                className="rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span>Submitting Application...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Submit Application</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>
@@ -567,9 +647,9 @@ const renderDepartmentQuestions = (department, QuestionnaireData, form) => {
               key={question.name}
               control={form.control}
               name={question.name}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium leading-relaxed">
+                  <FormLabel className={cn("text-sm font-medium leading-relaxed", fieldState.error && "text-red-500 font-semibold")}>
                     {question.name}
                   </FormLabel>
                   <FormControl>
@@ -577,14 +657,20 @@ const renderDepartmentQuestions = (department, QuestionnaireData, form) => {
                       <Input
                         {...field}
                         placeholder={question.placeholder || "Your answer..."}
-                        className="rounded-xl"
+                        className={cn(
+                          "rounded-xl transition-colors",
+                          fieldState.error ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-input"
+                        )}
                       />
                     ) : (
                       <Textarea
                         {...field}
                         rows={4}
                         placeholder={question.placeholder || "2-3 sentences explaining your approach..."}
-                        className="rounded-xl resize-none"
+                        className={cn(
+                          "rounded-xl resize-none transition-colors",
+                          fieldState.error ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-input"
+                        )}
                       />
                     )}
                   </FormControl>

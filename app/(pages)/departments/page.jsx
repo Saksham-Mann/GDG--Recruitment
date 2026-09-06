@@ -6,7 +6,7 @@ import { Space_Grotesk } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import { reviews } from "@/constants";
-import { Check, CheckCircle2, ArrowRight, Sparkles, Layers, Info } from "lucide-react";
+import { Check, CheckCircle2, ArrowRight, Sparkles, Layers, Info, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ const DepartmentsListPage = () => {
   const router = useRouter();
   const [selectedDepartments, setSelectedDepartments] = useState([]);
   const { submittedDepartments } = useSubmissions();
+  const [selectionNotice, setSelectionNotice] = useState(null);
 
   const [selectedCount, setSelectedCount] = useState(0);
   const [remainingSlots, setRemainingSlots] = useState(2);
@@ -51,12 +52,18 @@ const DepartmentsListPage = () => {
 
   const toggleDepartment = (departmentName) => {
     if (submittedDepartments?.includes(departmentName)) {
-      toast.error(`You have already submitted an application for ${departmentName}.`);
+      setSelectionNotice({
+        type: "info",
+        message: `You have already submitted an application for ${departmentName}.`,
+      });
       return;
     }
 
     if (remainingSlots <= 0) {
-      toast.error("You have already submitted the maximum allowed (2) applications.");
+      setSelectionNotice({
+        type: "error",
+        message: "You have already submitted the maximum allowed (2) applications for this cycle.",
+      });
       return;
     }
 
@@ -64,14 +71,19 @@ const DepartmentsListPage = () => {
       const isSelected = current.includes(departmentName);
 
       if (isSelected) {
+        setSelectionNotice(null);
         return current.filter((name) => name !== departmentName);
       }
 
       if (current.length >= remainingSlots) {
-        toast.error(`You can select at most ${remainingSlots} department(s).`);
+        setSelectionNotice({
+          type: "error",
+          message: `Department Limit Reached: You can select at most ${remainingSlots} department${remainingSlots > 1 ? "s" : ""}. Deselect a selected domain to pick another.`,
+        });
         return current;
       }
 
+      setSelectionNotice(null);
       return [...current, departmentName];
     });
   };
@@ -105,7 +117,14 @@ const DepartmentsListPage = () => {
             {/* Selection Counter & CTA Button */}
             <div className="flex items-center gap-4 shrink-0">
               <div className="flex flex-col items-end">
-                <span className="text-xs text-muted-foreground">Selected</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Selected</span>
+                  {selectedCount >= 2 && (
+                    <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+                      Limit reached
+                    </span>
+                  )}
+                </div>
                 <span className="text-lg font-bold text-foreground">
                   <span className="text-primary">{selectedCount}</span> / 2
                 </span>
@@ -121,6 +140,33 @@ const DepartmentsListPage = () => {
               </Button>
             </div>
           </div>
+
+          {/* Inline Department Limit Warning / Feedback Banner */}
+          {selectionNotice && (
+            <div
+              id="department-limit-notice"
+              role="alert"
+              aria-live="assertive"
+              className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-xs sm:text-sm font-medium animate-in fade-in-0 slide-in-from-top-1 duration-200 motion-reduce:animate-none ${
+                selectionNotice.type === "error"
+                  ? "border-red-500/40 bg-red-500/10 text-red-500 dark:border-red-500/30 dark:bg-red-950/30 dark:text-red-400"
+                  : "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="h-4 w-4 shrink-0 text-current" />
+                <span>{selectionNotice.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectionNotice(null)}
+                className="p-1 rounded-md text-current hover:bg-current/10 transition-colors"
+                aria-label="Dismiss limit warning"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Department Cards Grid */}
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in-0 duration-200 ease-out motion-reduce:animate-none">

@@ -18,12 +18,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Mail, Lock, User, Sparkles, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Lock, User, Sparkles, Eye, EyeOff, AlertCircle } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import AuthSkeleton from "@/components/skeletons/AuthSkeleton";
 import NavSkeleton from "@/components/skeletons/NavSkeleton";
 import FooterSkeleton from "@/components/skeletons/FooterSkeleton";
+import { cn } from "@/lib/utils";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -45,6 +46,9 @@ function SignInContent() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [authError, setAuthError] = useState("");
 
   // Sync mode if URL query parameter changes
   useEffect(() => {
@@ -53,6 +57,8 @@ function SignInContent() {
     } else if (queryMode === "signin" || queryTab === "signin") {
       setMode("signin");
     }
+    setFieldErrors({});
+    setAuthError("");
   }, [queryMode, queryTab]);
 
   useEffect(() => {
@@ -60,6 +66,46 @@ function SignInContent() {
       router.push("/");
     }
   }, [session, isPending, router]);
+
+  const validateField = (fieldName, value, currentMode = mode) => {
+    if (fieldName === "email") {
+      if (!value || !value.trim()) return "Email address is required.";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+        return "Invalid email format (e.g. student@example.edu).";
+      }
+      return "";
+    }
+    if (fieldName === "password") {
+      if (!value) return "Password is required.";
+      if (value.length < 6) return "Password must be at least 6 characters.";
+      return "";
+    }
+    if (fieldName === "name" && currentMode === "signup") {
+      if (!value || !value.trim()) return "Full Name is required.";
+      if (value.trim().length < 2) return "Name must be at least 2 characters.";
+      return "";
+    }
+    return "";
+  };
+
+  const handleBlur = (fieldName) => {
+    setTouched((prev) => ({ ...prev, [fieldName]: true }));
+    const val = fieldName === "name" ? name : fieldName === "email" ? email : password;
+    const err = validateField(fieldName, val);
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: err }));
+  };
+
+  const handleInputChange = (fieldName, val) => {
+    if (fieldName === "name") setName(val);
+    if (fieldName === "email") setEmail(val);
+    if (fieldName === "password") setPassword(val);
+    setAuthError("");
+
+    if (touched[fieldName] || Object.keys(fieldErrors).length > 0) {
+      const err = validateField(fieldName, val);
+      setFieldErrors((prev) => ({ ...prev, [fieldName]: err }));
+    }
+  };
 
   if (isPending) {
     return (
@@ -86,13 +132,29 @@ function SignInContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Credentials Incomplete: Email or password field is blank. Please enter both your email address and password to proceed.");
-      return;
-    }
+    setAuthError("");
 
-    if (mode === "signup" && !name) {
-      toast.error("Full Name Required: Name field is blank. Please provide your official name as registered with university records.");
+    const newErrors = {};
+    if (mode === "signup") {
+      const nameErr = validateField("name", name, "signup");
+      if (nameErr) newErrors.name = nameErr;
+    }
+    const emailErr = validateField("email", email, mode);
+    if (emailErr) newErrors.email = emailErr;
+    const passwordErr = validateField("password", password, mode);
+    if (passwordErr) newErrors.password = passwordErr;
+
+    setFieldErrors(newErrors);
+    setTouched({ name: true, email: true, password: true });
+
+    const errorFields = Object.keys(newErrors);
+    if (errorFields.length > 0) {
+      const firstFieldId = errorFields[0];
+      const el = document.getElementById(firstFieldId);
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
 
@@ -100,33 +162,31 @@ function SignInContent() {
     try {
       if (mode === "signup") {
         const res = await authClient.signUp.email({
-          email,
+          email: email.trim(),
           password,
-          name,
+          name: name.trim(),
           callbackURL: "/",
         });
         if (res?.error) {
-          toast.error(`Account Creation Failed: ${res.error.message || "A user with this email may already exist. Please verify your email address or click Sign In."}`);
+          setAuthError(res.error.message || "A user with this email may already exist. Please verify your email or click Sign In.");
         } else {
-          toast.success("Account created successfully!");
           router.push("/");
         }
       } else {
         const res = await authClient.signIn.email({
-          email,
+          email: email.trim(),
           password,
           callbackURL: "/",
         });
         if (res?.error) {
-          toast.error("Authentication Failed: The email or password entered does not match existing records. Please verify your credentials or click 'Create Account' if you are new.");
+          setAuthError("Authentication Failed: The email or password entered does not match existing records. Please verify your credentials or click 'Create Account'.");
         } else {
-          toast.success("Signed in successfully!");
           router.push("/");
         }
       }
     } catch (err) {
       console.error("Auth error:", err);
-      toast.error("Connection Failed: Unable to reach authentication service. Please check your network connection and try again.");
+      setAuthError("Connection Failed: Unable to reach authentication service. Please check your network connection and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -161,7 +221,11 @@ function SignInContent() {
                 <div className="grid grid-cols-2 rounded-xl bg-muted/60 p-1 border border-border/40">
                   <button
                     type="button"
-                    onClick={() => setMode("signin")}
+                    onClick={() => {
+                      setMode("signin");
+                      setFieldErrors({});
+                      setAuthError("");
+                    }}
                     className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
                       mode === "signin"
                         ? "bg-background text-foreground shadow-sm"
@@ -172,7 +236,11 @@ function SignInContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMode("signup")}
+                    onClick={() => {
+                      setMode("signup");
+                      setFieldErrors({});
+                      setAuthError("");
+                    }}
                     className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
                       mode === "signup"
                         ? "bg-background text-foreground shadow-sm"
@@ -185,12 +253,12 @@ function SignInContent() {
               </div>
             </CardHeader>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <CardContent className="space-y-4">
                 {mode === "signup" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-xs font-medium text-foreground">
-                      Full Name
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className={cn("text-xs font-medium transition-colors", fieldErrors.name ? "text-red-500 font-semibold" : "text-foreground")}>
+                      Full Name <span className="text-red-500" aria-hidden="true">*</span>
                     </Label>
                     <div className="relative">
                       <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -199,17 +267,28 @@ function SignInContent() {
                         type="text"
                         placeholder="Alex Morgan"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="pl-9 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary"
-                        required
+                        onChange={(e) => handleInputChange("name", e.target.value)}
+                        onBlur={() => handleBlur("name")}
+                        aria-invalid={!!fieldErrors.name}
+                        aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                        className={cn(
+                          "pl-9 rounded-xl border bg-background/50 transition-colors",
+                          fieldErrors.name ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-border/60 focus-visible:ring-primary"
+                        )}
                       />
                     </div>
+                    {fieldErrors.name && (
+                      <p id="name-error" role="alert" className="mt-1 text-xs font-medium text-red-500 flex items-center gap-1.5 animate-in fade-in-0 duration-150 motion-reduce:animate-none">
+                        <span className="inline-block h-1 w-1 rounded-full bg-red-500 shrink-0" aria-hidden="true" />
+                        <span>{fieldErrors.name}</span>
+                      </p>
+                    )}
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-xs font-medium text-foreground">
-                    Email Address
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className={cn("text-xs font-medium transition-colors", fieldErrors.email ? "text-red-500 font-semibold" : "text-foreground")}>
+                    Email Address <span className="text-red-500" aria-hidden="true">*</span>
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -218,16 +297,27 @@ function SignInContent() {
                       type="email"
                       placeholder="student@example.edu"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-9 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary"
-                      required
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onBlur={() => handleBlur("email")}
+                      aria-invalid={!!fieldErrors.email}
+                      aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                      className={cn(
+                        "pl-9 rounded-xl border bg-background/50 transition-colors",
+                        fieldErrors.email ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-border/60 focus-visible:ring-primary"
+                      )}
                     />
                   </div>
+                  {fieldErrors.email && (
+                    <p id="email-error" role="alert" className="mt-1 text-xs font-medium text-red-500 flex items-center gap-1.5 animate-in fade-in-0 duration-150 motion-reduce:animate-none">
+                      <span className="inline-block h-1 w-1 rounded-full bg-red-500 shrink-0" aria-hidden="true" />
+                      <span>{fieldErrors.email}</span>
+                    </p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-xs font-medium text-foreground">
-                    Password
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className={cn("text-xs font-medium transition-colors", fieldErrors.password ? "text-red-500 font-semibold" : "text-foreground")}>
+                    Password <span className="text-red-500" aria-hidden="true">*</span>
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -236,9 +326,14 @@ function SignInContent() {
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-9 pr-10 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary"
-                      required
+                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      onBlur={() => handleBlur("password")}
+                      aria-invalid={!!fieldErrors.password}
+                      aria-describedby={fieldErrors.password ? "password-error" : undefined}
+                      className={cn(
+                        "pl-9 pr-10 rounded-xl border bg-background/50 transition-colors",
+                        fieldErrors.password ? "border-red-500 focus-visible:ring-red-500 focus:ring-red-500" : "border-border/60 focus-visible:ring-primary"
+                      )}
                     />
                     <button
                       type="button"
@@ -253,10 +348,26 @@ function SignInContent() {
                       )}
                     </button>
                   </div>
+                  {fieldErrors.password && (
+                    <p id="password-error" role="alert" className="mt-1 text-xs font-medium text-red-500 flex items-center gap-1.5 animate-in fade-in-0 duration-150 motion-reduce:animate-none">
+                      <span className="inline-block h-1 w-1 rounded-full bg-red-500 shrink-0" aria-hidden="true" />
+                      <span>{fieldErrors.password}</span>
+                    </p>
+                  )}
                 </div>
               </CardContent>
 
               <CardFooter className="flex flex-col gap-3 pt-2">
+                {authError && (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="w-full flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-medium text-red-500 animate-in fade-in-0 duration-200"
+                  >
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                    <span>{authError}</span>
+                  </div>
+                )}
                 <Button
                   type="submit"
                   disabled={submitting}

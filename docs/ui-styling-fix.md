@@ -832,6 +832,51 @@ To fully support users who experience motion sickness, vestibular conditions, or
 - [`app/auth/signin/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signin/page.jsx): Added entrance transition to auth card container.
 - [`components/NavBar.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/NavBar.jsx): Added 150ms fade-in transition to resolved auth buttons and user button.
 
+---
+
+## 31. Real-Time Inline Field Validation & Contextual Feedback Architecture
+
+### Overview
+Refactored the application form validation across the recruitment portal to eliminate top-of-page alert banners, window alerts, and toast popups that previously forced candidates to scroll up or hunt for error messages upon submission. Validation feedback is now rendered directly and contextually beneath each input element in real time, pairing accessible ARIA markup with immediate visual cues and automatic error autofocus.
+
+### Core Architectural Upgrades
+1. **Removal of Top Alert Banners & Toast Notifications for Validation:**
+   - **Form Container:** Removed the top-of-page `{errorMessage && !isSubmitting && (<div className="mb-8 ...">...</div>)}` alert banner that required scrolling all the way to the top of the viewport.
+   - **Form Actions Area:** If server-level transmission or network errors occur, feedback is rendered inline directly above the submission button (`Submit Application`), keeping the message exactly where the user is looking.
+   - **Department Exceeded Warnings:** Replaced top toast notifications with an inline limit warning banner and an in-place counter indicator directly inside the department selection area.
+
+2. **Real-Time Field-Level Validation Triggers:**
+   - Configured React Hook Form with `mode: "onTouched"` and `reValidateMode: "onChange"`.
+   - **Blur Phase (`onTouched`):** When a user moves away from an incomplete or invalid field, validation triggers immediately without waiting for a full form submission.
+   - **Typing Phase (`onChange`):** Once a field is flagged as touched or invalid, every keystroke revalidates the input in real-time. As soon as criteria are satisfied, the error indicator and red border immediately clear, restoring standard styling without requiring a re-submit.
+
+3. **Inline Error Display & Visual Cue Styling:**
+   - **Error Message Layout:** Rendered directly below each input or select using `<p className="mt-1 text-xs font-medium text-red-500 flex items-center gap-1.5 ...">` with a colored bullet indicator.
+   - **Border & Ring Highlights:** Applied `border-red-500 focus-visible:ring-red-500 focus:ring-red-500` to invalid fields (`Input`, `Textarea`, and `<select>`), with `aria-[invalid=true]:border-red-500` applied at the design system level.
+   - **Label Cue:** Field labels dynamically transition to `text-red-500 font-semibold` when in an error state.
+
+4. **Accessibility (a11y) & Focus Management:**
+   - **ARIA Linkage:** Inputs are linked to their error messages using `aria-describedby={`${id}-error`}` or `aria-describedby={`${formDescriptionId} ${formMessageId}`}` on `FormControl`.
+   - **ARIA State:** Invalid inputs are marked with `aria-invalid="true"`.
+   - **Screen Reader Announcements:** Error containers utilize `role="alert"` and `aria-live="polite"` so assistive technologies announce issues contextually.
+   - **First Invalid Field Autofocus:** Upon clicking "Submit Application", if client-side validation fails, the form automatically identifies the first invalid element, focuses it (`element.focus()`), and smoothly scrolls it to the center of the viewport (`scrollIntoView({ behavior: "smooth", block: "center" })`).
+
+5. **Specific Field Error Rules Implemented Inline:**
+   - **Invalid Email Formats:** Strictly checked via Zod `.email("Invalid email format. Please enter a valid email address (e.g. name@example.com).")` and regex tests on candidate portal.
+   - **Empty Required Fields:** Full Name (`min(1)`), Registration Number (`min(1)`), Phone Number (`min(1)`), and Email (`min(1)`) are clearly marked with an asterisk (`*`) and produce descriptive messages when left blank.
+   - **University Registration Code:** Enforces VIT format `25BCE5612` (2 digits, 3 letters, 4 digits) with auto-capitalization and inline regex validation.
+   - **Phone Number Format:** Enforces exactly 10 digits without country code with real-time numeric regex validation.
+   - **Two-Department Limit:** When a user attempts to select a 3rd department or exceeds their remaining slots, an inline warning displays directly below the department selection header: `"Department Limit Reached: You can select at most 2 departments. Deselect a domain to choose another."`
+
+### Files Updated
+- [`components/ui/form.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/ui/form.jsx): Updated `FormLabel`, `FormControl`, and `FormMessage` with `role="alert"`, `text-red-500`, `aria-invalid="true"`, and accessible bullet cues.
+- [`components/ui/input.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/ui/input.jsx): Added `aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus-visible:ring-red-500` and smooth color transitions.
+- [`components/ui/textarea.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/ui/textarea.jsx): Added `aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus-visible:ring-red-500` and smooth color transitions.
+- [`components/FormComp.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/FormComp.jsx): Switched to `mode: "onTouched"` / `reValidateMode: "onChange"`, updated Zod schemas for email and required fields, removed top error banner, added first-invalid autofocus, and moved submission error feedback directly above submit button.
+- [`app/(pages)/departments/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/departments/page.jsx): Replaced toast error popups with inline limit notice and counter badge right at the department selection section.
+- [`app/auth/signin/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signin/page.jsx): Added real-time inline validation on blur/change, visual cues, autofocus on first error, and inline authentication error card.
+
+
 
 
 
