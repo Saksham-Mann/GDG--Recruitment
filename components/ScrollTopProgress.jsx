@@ -4,18 +4,11 @@ import React, { useState, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
 
 export default function ScrollTopProgress() {
-  const [scrollPercentage, setScrollPercentage] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScroll = window.scrollY;
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const percentage = Math.min(100, Math.max(0, (currentScroll / totalHeight) * 100));
-        setScrollPercentage(percentage);
-      }
-      setShowScrollTop(currentScroll > 300);
+      setShowScrollTop(window.scrollY > 300);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -31,15 +24,6 @@ export default function ScrollTopProgress() {
 
   return (
     <>
-      {/* Scroll Progress Bar at very top of viewport */}
-      <div
-        className="fixed top-0 left-0 right-0 h-[2.5px] z-[60] pointer-events-none transition-all duration-150"
-        style={{
-          width: `${scrollPercentage}%`,
-          background: "linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%)",
-        }}
-      />
-
       {/* Floating Scroll Back to Top Button */}
       {showScrollTop && (
         <button
