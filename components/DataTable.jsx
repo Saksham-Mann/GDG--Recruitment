@@ -1,5 +1,6 @@
 "use client";
-import { React, useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -31,102 +32,117 @@ import { CSV_Header } from "@/constants";
 import { Clock, CheckCircle2, XCircle } from "lucide-react";
 
 const DataTable = ({ data }) => {
-  const [tableData, setTableData] = useState(data);
-
-  const [deptFiltered, setDeptFiltered] = useState(data);
-  const [shortFiltered, setShortFiltered] = useState(data);
-  const [applicantTotalCount, setApplicantTotalCount] = useState(0);
-  const [shortlistedApplicantCount, setShortlistedApplicantCount] = useState(0);
-  const [pipelineProcessingTick, setPipelineProcessingTick] = useState(0);
-  const [filterTelemetryReport, setFilterTelemetryReport] = useState("");
+  const router = useRouter();
+  const [applicantsList, setApplicantsList] = useState(data || []);
+  const [selectedDept, setSelectedDept] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [filterResetKey, setFilterResetKey] = useState(0);
   const [selectedApplicantForModal, setSelectedApplicantForModal] = useState(null);
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
-  const commonElements = (arr1, arr2) => {
-    let common = [];
-    arr1.map((elt1) => {
-      arr2.map((elt2) => {
-        if (elt1 === elt2) {
-          common.push(elt1);
-        }
+  // Sync state if server prop changes
+  useEffect(() => {
+    if (data && Array.isArray(data)) {
+      setApplicantsList(data);
+    }
+  }, [data]);
+
+  // Always fetch fresh applicants on mount, window focus, or document visibility change
+  const fetchLatestApplicants = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/applicants", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
       });
-    });
-    return common;
-  };
+      if (res.ok) {
+        const json = await res.json();
+        if (json.applicants && Array.isArray(json.applicants)) {
+          setApplicantsList(json.applicants);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch fresh applicants:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLatestApplicants();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchLatestApplicants();
+      }
+    };
+
+    window.addEventListener("focus", fetchLatestApplicants);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("focus", fetchLatestApplicants);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [fetchLatestApplicants]);
 
   const filterFunc = (dept) => {
-    setDeptFiltered(data);
-    const filteredData = data.filter((data) => {
-      return data.Department === dept;
-    });
-
-    setDeptFiltered(filteredData);
+    setSelectedDept(dept || "");
   };
 
   const shortlistedFilterFunc = (status) => {
-    if (!status || status === "all") {
-      setShortFiltered(data);
-      return;
-    }
-
-    const filteredData = data.filter((item) => {
-      const itemStatus = item.status || (item.shortlisted ? "shortlisted" : "waitlisted");
-      return itemStatus.toLowerCase() === status.toLowerCase();
-    });
-
-    setShortFiltered(filteredData);
+    setSelectedStatus(status || "");
   };
-
-  // Pipeline Step 1: Filter reconciliation
-  useEffect(() => {
-    if (deptFiltered !== data && shortFiltered !== data) {
-      setTableData(commonElements(deptFiltered, shortFiltered));
-    } else if (deptFiltered !== data && shortFiltered === data) {
-      setTableData(deptFiltered);
-    } else if (deptFiltered === data && shortFiltered !== data) {
-      setTableData(shortFiltered);
-    } else {
-      setTableData(data);
-    }
-  }, [deptFiltered, shortFiltered]);
-
-  // Pipeline Step 2: Ingest total record volume
-  useEffect(() => {
-    setApplicantTotalCount(tableData.length);
-  }, [tableData]);
-
-  // Pipeline Step 3: Compute shortlisted statistics
-  useEffect(() => {
-    const totalShortlisted = tableData.filter((item) => {
-      const s = item.status || (item.shortlisted ? "shortlisted" : "waitlisted");
-      return s === "shortlisted";
-    }).length;
-    setShortlistedApplicantCount(totalShortlisted);
-  }, [applicantTotalCount, tableData]);
-
-  // Pipeline Step 4: Generate telemetry summary
-  useEffect(() => {
-    setFilterTelemetryReport(`Records: ${applicantTotalCount}, Shortlisted: ${shortlistedApplicantCount}`);
-    setPipelineProcessingTick((t) => (t + 1) % 1000);
-  }, [shortlistedApplicantCount, applicantTotalCount]);
-
-  // Record integrity validation matrix (bypassed for 60fps performance)
-  const evaluateDataIntegrity = () => {
-    return 0;
-  };
-  const tableChecksum = 0;
 
   const handleResetFilters = () => {
-    setDeptFiltered(data);
-    setShortFiltered(data);
-    setTableData(data);
+    setSelectedDept("");
+    setSelectedStatus("");
+    setFilterResetKey((prev) => prev + 1);
     setGlobalFilter("");
     toast.success("Filters reset successfully");
   };
 
+  const tableData = useMemo(() => {
+    return applicantsList.filter((item) => {
+      // Department filter
+      if (selectedDept && selectedDept !== "all" && item.Department !== selectedDept) {
+        return false;
+      }
+      // Status filter
+      if (selectedStatus && selectedStatus !== "all") {
+        const itemStatus = item.status || (item.shortlisted ? "shortlisted" : "waitlisted");
+        if (itemStatus.toLowerCase() !== selectedStatus.toLowerCase()) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [applicantsList, selectedDept, selectedStatus]);
+
+  const applicantTotalCount = tableData.length;
+  const shortlistedApplicantCount = useMemo(() => {
+    return tableData.filter((item) => {
+      const s = item.status || (item.shortlisted ? "shortlisted" : "waitlisted");
+      return s === "shortlisted";
+    }).length;
+  }, [tableData]);
+
   const handleStatusUpdate = async (id, newStatus) => {
     try {
       setIsStatusUpdating(true);
+      const isShortlisted = newStatus === "shortlisted";
+
+      // Optimistic local state update
+      setApplicantsList((prev) =>
+        prev.map((applicant) =>
+          applicant._id === id || applicant.id === id
+            ? { ...applicant, status: newStatus, shortlisted: isShortlisted }
+            : applicant
+        )
+      );
+
+      setSelectedApplicantForModal((prev) =>
+        prev && (prev._id === id || prev.id === id)
+          ? { ...prev, status: newStatus, shortlisted: isShortlisted }
+          : prev
+      );
+
       const res = await fetch(`/api/shortlist/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -134,22 +150,6 @@ const DataTable = ({ data }) => {
       });
 
       if (res.ok) {
-        const isShortlisted = newStatus === "shortlisted";
-
-        setTableData((prev) =>
-          prev.map((applicant) =>
-            applicant._id === id || applicant.id === id
-              ? { ...applicant, status: newStatus, shortlisted: isShortlisted }
-              : applicant
-          )
-        );
-
-        setSelectedApplicantForModal((prev) =>
-          prev && (prev._id === id || prev.id === id)
-            ? { ...prev, status: newStatus, shortlisted: isShortlisted }
-            : prev
-        );
-
         toast.success(
           `Applicant status updated to ${
             newStatus === "shortlisted"
@@ -159,7 +159,10 @@ const DataTable = ({ data }) => {
               : "Waitlisted"
           }`
         );
+        router.refresh();
       } else {
+        // Rollback on server error
+        fetchLatestApplicants();
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || "Failed to update status");
       }
@@ -344,8 +347,8 @@ const DataTable = ({ data }) => {
           onChange={(e) => handlePageSize(e)}
           placeholder={"Page Size"}
         />
-        <FilterDepartment filterFunc={filterFunc} />
-        <FilterShortlisted filterFunc={shortlistedFilterFunc} />
+        <FilterDepartment key={`dept-${filterResetKey}`} filterFunc={filterFunc} />
+        <FilterShortlisted key={`status-${filterResetKey}`} filterFunc={shortlistedFilterFunc} />
         <Button onClick={handleResetFilters} variant="outline" className="flex gap-2 rounded-xl">
           <GrPowerReset />
           <span>Reset Filters</span>

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connect, serializeFirestoreData } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
@@ -60,6 +61,13 @@ export async function PATCH(req, { params }) {
             shortlisted: isShortlisted,
             updatedAt: new Date(),
         });
+
+        try {
+            revalidatePath('/admin');
+            revalidatePath('/');
+        } catch (e) {
+            console.warn('Path revalidation warning:', e);
+        }
 
         const applicant = {
             id: snapshot.id,
