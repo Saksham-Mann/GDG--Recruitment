@@ -308,5 +308,65 @@ To align with modern data privacy principles, fair candidate recruitment practic
   > *"By submitting, you agree to our User Agreement and acknowledge our Privacy Policy."*
 - **Confirmation Modal Safeguard**: Integrated applicant certification into the pre-flight confirmation dialog, ensuring affirmative candidate consent prior to database persistence.
 
+---
+
+## 11. Authentication Architecture & Google Account Linking
+
+### 1. Problem & Root Cause Analysis
+Candidates who created their portal account using standard email/password authentication (`authClient.signUp.email`) had local user records created in Firestore with `emailVerified: false`. When those same candidates subsequently clicked **Sign In with Google** using the identical email address:
+- Better Auth's OAuth callback handler evaluated account linking conditions.
+- By default, `accountLinking.requireLocalEmailVerified` evaluates to `true`, and Google was not explicitly declared as a trusted provider for implicit linking.
+- As a consequence, Better Auth aborted the linking sequence and returned an `account not linked` error, redirecting to an unhandled error route.
+
+### 2. Implementation Specifications
+1. **Trusted Account Linking Configuration (`lib/auth.js`)**:
+   ```javascript
+   account: {
+     accountLinking: {
+       enabled: true,
+       trustedProviders: ["google"],
+       requireLocalEmailVerified: false,
+     },
+   },
+   onAPIError: {
+     errorURL: "/auth/signin",
+   },
+   ```
+   - `trustedProviders: ["google"]`: Authorizes Better Auth to trust Google as an authoritative identity provider for linking.
+   - `requireLocalEmailVerified: false`: Allows linking even if the initial password-based signup did not undergo manual email verification. Upon successful Google OAuth authentication, Better Auth automatically sets `emailVerified: true` on the local user record.
+2. **Graceful Error Fallbacks & Normalized Inputs (`app/auth/signin/page.jsx`, `components/SignInButton.jsx`)**:
+   - Added `errorCallbackURL: "/auth/signin"` to `authClient.signIn.social` invocations.
+   - Added automatic email normalization (`email.trim().toLowerCase()`) on both sign-up and sign-in to eliminate casing discrepancies.
+   - Added active query parameter listeners (`searchParams.get("error")`) to surface helpful inline error notifications if any authentication handshake fails.
+
+---
+
+## 12. Admin Panel Real-Time Status Synchronization & Cache Invalidation
+
+### 1. The State Desynchronization Issue
+When recruitment leads updated an applicant's review status (e.g. marking a waitlisted candidate as "rejected"):
+- The home page `/` correctly reflected the rejection by fetching directly from `/api/check-applications`.
+- Navigating back to `/admin` caused the candidate's status to revert to "waitlisted" in the table.
+- Switching between filters or pagination tabs temporarily cleared or distorted status updates.
+
+### 2. Root Cause Analysis
+1. **Next.js Router Cache**: Next.js App Router cached the `/admin` Server Component payload in the client-side router cache. Navigating `/admin` -> `/` -> `/admin` rendered the stale in-memory RSC snapshot rather than re-evaluating the server component.
+2. **Fragmented Filter Pipeline in `DataTable.jsx`**: The table maintained three independent arrays (`data`, `deptFiltered`, `shortFiltered`). `handleStatusUpdate` only updated `tableData`, leaving `data` stale. Subsequent filter changes filtered against the stale `data` prop, immediately overwriting status updates.
+3. **Missing Path Revalidation**: `/api/shortlist/[id]` committed changes to Firestore but did not call `revalidatePath`.
+
+### 3. Architectural Solution
+1. **Unified Reactive State**:
+   - `DataTable.jsx` maintains a single `applicantsList` master array as the source of truth, deriving `tableData` reactively using `useMemo([applicantsList, selectedDept, selectedStatus])`.
+   - Any status update immediately propagates across all active department and status filters without desynchronization.
+2. **Automatic Lifecycle Synchronization**:
+   - Added auto-fetching (`fetchLatestApplicants` via `/api/admin/applicants` with `cache: "no-store"`):
+     - Automatically runs on mount when navigating to the admin panel.
+     - Automatically runs on window `focus` and document `visibilitychange` (e.g. switching between browser tabs).
+3. **Server & Router Cache Invalidation**:
+   - Added `revalidatePath('/admin')` and `revalidatePath('/')` to `app/api/shortlist/[id]/route.js`.
+   - Added `export const revalidate = 0;` and `export const fetchCache = "force-no-store";` to `app/(pages)/admin/page.jsx`.
+   - Added `router.refresh()` to `handleStatusUpdate` in `DataTable.jsx` to clear the client router cache immediately after successful PATCH requests.
+4. **Dynamic Filter Resets**: Added key-based reset triggers (`filterResetKey`) to `FilterDepartment` and `FilterShortlisted` so resetting filters clears both data filters and dropdown UI states.
+
 
 

@@ -876,6 +876,43 @@ Refactored the application form validation across the recruitment portal to elim
 - [`app/(pages)/departments/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/(pages)/departments/page.jsx): Replaced toast error popups with inline limit notice and counter badge right at the department selection section.
 - [`app/auth/signin/page.jsx`](file:///c:/Users/saksh/Desktop/gdg/app/auth/signin/page.jsx): Added real-time inline validation on blur/change, visual cues, autofocus on first error, and inline authentication error card.
 
+---
+
+## 32. Viewport Scroll Indicator Removal (`components/ScrollTopProgress.jsx`)
+
+### Overview
+Removed the fixed gradient progress indicator bar at the top of the browser viewport to streamline visual presentation and avoid redundant screen chrome during page navigation.
+
+### Changes Implemented
+1. **Removed Fixed Top Progress Bar**: Completely removed the `2.5px` fixed gradient bar (`linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%)`) from `ScrollTopProgress.jsx`.
+2. **Simplified Scroll State Calculations**: Eliminated the `scrollPercentage` state and scroll height calculations (`(currentScroll / totalHeight) * 100`) from the window scroll listener.
+3. **Preserved Floating Scroll-to-Top Button**: Retained the smooth floating circular "Back to Top" button that animates in when the user scrolls past 300px.
+
+### Files Updated
+- [`components/ScrollTopProgress.jsx`](file:///c:/Users/saksh/Desktop/gdg/components/ScrollTopProgress.jsx): Removed top progress bar element and scroll percentage calculations.
+
+---
+
+## 33. Google OAuth Account Linking & Admin Panel Real-Time Status Synchronization
+
+### 1. Google OAuth Account Linking Architecture (`lib/auth.js`, `app/auth/signin/page.jsx`, `components/SignInButton.jsx`)
+- **Issue**: Users who registered via email and password had `emailVerified: false`. When subsequent logins used Google OAuth with the same email, Better Auth defaulted to `requireLocalEmailVerified: true` and rejected automatic linking with an `"account not linked"` error.
+- **Fix**:
+  - Configured `account.accountLinking` with `enabled: true`, `trustedProviders: ["google"]`, and `requireLocalEmailVerified: false` in `lib/auth.js`.
+  - Configured `onAPIError: { errorURL: "/auth/signin" }` in `lib/auth.js`.
+  - Added `errorCallbackURL: "/auth/signin"` across Google sign-in buttons in `app/auth/signin/page.jsx` and `components/SignInButton.jsx`.
+  - Added normalized lowercase email handling and URL `error` parameter detection with friendly user messaging in `app/auth/signin/page.jsx`.
+
+### 2. Admin Panel Real-Time Status Synchronization & Cache Invalidation (`components/DataTable.jsx`, `app/api/shortlist/[id]/route.js`, `app/(pages)/admin/page.jsx`)
+- **Issue**: When an administrator updated an applicant status (e.g. from Waitlisted to Rejected) on the admin panel, navigating to the home page showed the updated status, but navigating back to `/admin` reverted the candidate back to Waitlist. Status filters also operated on a stale immutable prop.
+- **Fix**:
+  - Consolidated `DataTable.jsx` into a unified reactive state (`applicantsList`), computing `tableData` reactively via `useMemo` so status updates immediately reflect across all active filters.
+  - Added `revalidatePath('/admin')` and `revalidatePath('/')` in `app/api/shortlist/[id]/route.js` upon status mutation.
+  - Added `export const revalidate = 0;` and `export const fetchCache = "force-no-store";` to `app/(pages)/admin/page.jsx`.
+  - Added auto-fetching (`fetchLatestApplicants` via `/api/admin/applicants` with `cache: "no-store"`) in `DataTable.jsx` on mount, window `focus`, and document `visibilitychange`.
+  - Added `router.refresh()` in `handleStatusUpdate` to purge client router cache.
+  - Added dynamic reset keys to `FilterDepartment` and `FilterShortlisted` for clean UI resets.
+
 
 
 
