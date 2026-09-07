@@ -63,6 +63,19 @@ function SignInContent() {
     setGoogleLoading(false);
   }, [queryMode, queryTab]);
 
+  // Handle OAuth or callback error parameters in URL
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    const errorDesc = searchParams.get("error_description");
+    if (errorParam) {
+      if (errorParam === "account_not_linked") {
+        setAuthError("An account with this email already exists. Please verify your credentials or sign in with your email and password.");
+      } else {
+        setAuthError(errorDesc || `Authentication error: ${errorParam.replace(/_/g, " ")}`);
+      }
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (session?.user && !isPending) {
       router.push("/");
@@ -162,9 +175,10 @@ function SignInContent() {
 
     setSubmitting(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       if (mode === "signup") {
         const res = await authClient.signUp.email({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           name: name.trim(),
           callbackURL: "/",
@@ -176,7 +190,7 @@ function SignInContent() {
         }
       } else {
         const res = await authClient.signIn.email({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           callbackURL: "/",
         });
@@ -201,6 +215,7 @@ function SignInContent() {
       const res = await authClient.signIn.social({
         provider: "google",
         callbackURL: searchParams.get("callbackUrl") || "/",
+        errorCallbackURL: "/auth/signin",
       });
       if (res?.error) {
         setAuthError(
