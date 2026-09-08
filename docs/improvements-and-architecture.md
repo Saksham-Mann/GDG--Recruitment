@@ -120,7 +120,7 @@ When a candidate applies to multiple departments (up to the system maximum of 2)
     - Badges for all submitted tracks.
   - **Shortlisted (`shortlisted`)**:
     - Celebratory emerald/gold card with confetti styling, `Trophy` and `Sparkles` icons.
-    - Prominent banner: *"🎉 Congratulations! You have been shortlisted for the next round. Check your email for further instructions!"*
+    - Prominent banner: *"Congratulations! You have been shortlisted for the next round. Check your email for further instructions!"*
   - **Rejected (`rejected`)**:
     - Encouraging, respectful neutral/rose card with `HeartHandshake` icon.
     - Warm feedback: *"Thank you for applying to GDG. Unfortunately, we will not be moving forward with your application for this round. We wish you the best in your upcoming journey!"*

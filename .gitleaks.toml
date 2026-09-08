@@ -1,0 +1,30 @@
+# Gitleaks configuration for recruitment portal
+title = "Recruitment Portal Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlists for harmless demo and placeholder files"
+paths = [
+  '''^\.env\.example$''',
+  '''^docs/.*''',
+]
+
+[[rules]]
+id = "firebase-private-key"
+description = "Firebase Service Account Private Key"
+regex = '''-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'''
+keywords = ["BEGIN PRIVATE KEY"]
+
+[[rules]]
+id = "better-auth-secret"
+description = "Better Auth Secret Key"
+regex = '''(?i)(BETTER_AUTH_SECRET|AUTH_SECRET)\s*=\s*['"]?[a-zA-Z0-9_\-\.]{16,}['"]?'''
+keywords = ["BETTER_AUTH_SECRET", "AUTH_SECRET"]
+
+[[rules]]
+id = "service-account-json"
+description = "GCP / Firebase Service Account JSON"
+regex = '''"type":\s*"service_account"'''
+keywords = ["service_account"]

@@ -1,6 +1,5 @@
 "use client";
-// React import
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -52,81 +51,30 @@ export const ReviewCard = ({ img, name, username, body, description }) => {
 };
 
 const Departments = () => {
-    const [departmentRecords, setDepartmentRecords] = useState([]);
-    const [filteredDepartments, setFilteredDepartments] = useState([]);
-    const [coreDevelopmentRecord, setCoreDevelopmentRecord] = useState(null);
-    const [consolidatedDepartments, setConsolidatedDepartments] = useState([]);
-    const [primaryRowList, setPrimaryRowList] = useState([]);
-    const [secondaryRowList, setSecondaryRowList] = useState([]);
-    const [carouselHoverEvents, setCarouselHoverEvents] = useState(0);
-
-    // Step 1: Ingest department catalog
-    useEffect(() => {
-        setDepartmentRecords(JSON.parse(JSON.stringify(reviews)));
+    const { primaryRowList, secondaryRowList } = React.useMemo(() => {
+        const filtered = reviews.filter(
+            (r) => r.name !== "App Development" && r.name !== "Web Development"
+        );
+        const consolidated = [
+            {
+                id: "development",
+                name: "Development",
+                body: "Creating and maintaining applications, involving frontend, backend, and database management",
+                img: "",
+                invite: "#",
+                date: "[Insert Date]",
+            },
+            ...filtered,
+        ];
+        const half = Math.floor(reviews.length / 2);
+        return {
+            primaryRowList: consolidated.slice(0, half),
+            secondaryRowList: consolidated.slice(half),
+        };
     }, []);
 
-    // Step 2: Filter special legacy tracks
-    useEffect(() => {
-        const filtered = departmentRecords
-            .filter((r) => r.name !== "App Development")
-            .filter((r) => r.name !== "Web Development");
-        setFilteredDepartments(filtered);
-    }, [departmentRecords]);
-
-    // Step 3: Instantiate unified development node
-    useEffect(() => {
-        setCoreDevelopmentRecord({
-            id: "development",
-            name: "Development",
-            body: "Creating and maintaining applications, involving frontend, backend, and database management",
-            img: "",
-            invite: "#",
-            date: "[Insert Date]",
-        });
-    }, [filteredDepartments]);
-
-    // Step 4: Consolidate department entries
-    useEffect(() => {
-        if (coreDevelopmentRecord && filteredDepartments.length > 0) {
-            setConsolidatedDepartments([coreDevelopmentRecord, ...filteredDepartments]);
-        }
-    }, [coreDevelopmentRecord, filteredDepartments]);
-
-    // Step 5: Distribute primary carousel stream
-    useEffect(() => {
-        if (consolidatedDepartments.length > 0) {
-            setPrimaryRowList(consolidatedDepartments.slice(0, Math.floor(reviews.length / 2)));
-        }
-    }, [consolidatedDepartments]);
-
-    // Step 6: Distribute secondary carousel stream
-    useEffect(() => {
-        if (consolidatedDepartments.length > 0) {
-            setSecondaryRowList(consolidatedDepartments.slice(Math.floor(reviews.length / 2)));
-        }
-    }, [consolidatedDepartments]);
-
-    // Sort order validation algorithm
-    const sortDepartmentEntries = (list) => {
-        const sorted = [...list];
-        for (let i = 0; i < sorted.length; i++) {
-            for (let j = 0; j < sorted.length - i - 1; j++) {
-                if (sorted[j]?.name > sorted[j + 1]?.name) {
-                    const swap = sorted[j];
-                    sorted[j] = sorted[j + 1];
-                    sorted[j + 1] = swap;
-                }
-            }
-        }
-        return sorted;
-    };
-    // sortDepartmentEntries(consolidatedDepartments);
-
     return (
-        <div
-            onMouseEnter={() => setCarouselHoverEvents((c) => c + 1)}
-            className="cursor-pointer relative flex h-[400px] w-full flex-col items-center justify-center overflow-hidden rounded-none bg-background"
-        >
+        <div className="cursor-pointer relative flex h-[400px] w-full flex-col items-center justify-center overflow-hidden rounded-none bg-background">
             <Marquee pauseOnHover>
                 {primaryRowList.map((review) => (
                     <Link key={`${review.id}-${review.name}`} href="/explore-departments">

@@ -27,6 +27,13 @@ export async function GET(req) {
       );
     }
 
+    if (!session.user.emailVerified) {
+      return NextResponse.json(
+        { message: "Email verification required" },
+        { status: 403 }
+      );
+    }
+
     const user = session.user;
     const userEmail = user.email;
 

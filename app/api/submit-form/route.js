@@ -69,6 +69,13 @@ export async function POST(req) {
       );
     }
 
+    if (!session.user.emailVerified) {
+      return new Response(
+        JSON.stringify({ message: "Email verification required. Please verify your account before submitting an application." }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const user = session.user;
     const userEmail = user.email.toLowerCase().trim();
 
