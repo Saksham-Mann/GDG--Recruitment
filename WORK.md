@@ -1,58 +1,58 @@
-# Engineering Milestone Documentation: GDG Recruitment Portal
+# GDG Recruitment Portal: Summary
 
-This document provides an exhaustive, production-grade technical account of all engineering phases executed on the Google Developer Groups (GDG) Recruitment Portal. It covers the initial UI/UX stabilization and CPU loop elimination, the comprehensive P0 through P3 security hardening audit, the branch organization strategy, and the advanced architectural additions including the 6-digit OTP email verification engine, database transaction repairs, cost optimizations, and decoupled information architecture.
+This document gives a clear summary of all the work done on the Google Developer Groups (GDG) Recruitment Portal. It covers the frontend fixes, performance improvements, security updates, database fixes, and new features like email OTP verification, department exploration, and admin controls.
 
 ---
 
 ## Section 1: Earlier UI/UX Improvements
 
 ### 1.1 Initial State of the Application
-The original recruitment portal exhibited critical rendering and performance degradation:
-- **Unstyled Rendering & CSS Breakdown**: The layout suffered from unrendered CSS tokens, broken Tailwind utility mappings, misaligned flex containers, and unstyled raw HTML elements. CSS variables for the color system (`--background`, `--foreground`, `--primary`, `--card`, `--muted`) were partially missing or unreferenced, causing dark/light theme flashing and illegible white-on-white or black-on-black text blocks.
-- **Performance-Freezing CPU Loops**:
-  - In `components/Card.jsx`, an un-memoized 50,000-iteration synchronous trigonometric loop (`calculateSurfaceShading`) was invoked during hover and re-render cycles, pegging client CPU cores to 100% and completely freezing the main browser thread.
-  - In `components/AllDepartments.jsx`, an unthrottled window resize listener triggered a 35,000-iteration array computation (`computeMeshDensity`), causing massive frame drops and unresponsive viewport resizing.
-  - In `components/Departments.jsx`, an artificial 6-stage cascading `useEffect` state chain repeatedly re-rendered marquee subcomponents and executed synchronous nested bubble-sort operations on the main thread.
-- **Cumulative Layout Shifts (CLS)**: Dynamic data components lacked skeleton fallbacks, causing jarring content reflows as session tokens, department catalogs, and submissions loaded asynchronously.
-- **Overlapping Typography & Obstructed Elements**: Hero headers overlapped navigation bars on mobile viewports; floating status indicators clashed with brand marks; dialog modals lacked backdrop filters and keyboard dismissibility.
+The original recruitment portal had several display and performance issues:
+- **Broken Layout and Styling**: The portal had missing CSS color variables and broken Tailwind styles. Text was hard to read due to poor color contrast, and dark mode was flashing or showing black-on-black and white-on-white text.
+- **Heavy CPU Loops That Froze the Browser**:
+  - In `components/Card.jsx`, a 50,000-step loop ran on every hover and render, freezing the browser.
+  - In `components/AllDepartments.jsx`, a 35,000-step loop ran whenever the window was resized, causing major lag.
+  - In `components/Departments.jsx`, chained effects and sorting ran on the main thread, causing unnecessary re-renders.
+- **Layout Shifts**: Components jumped around as data loaded because there were no loading skeletons.
+- **Overlapping Text and Hidden Elements**: Headers overlapped the navigation bar on mobile screens, status badges blocked icons, and popups could not be closed easily.
 
 ### 1.2 Recovery of Styling Tokens, Tailwind Configuration, and Core Components
-To establish a cohesive, modern visual foundation, the design system was reconstructed:
-- **Tailwind Configuration Restoration**: Updated `tailwind.config.js` to define semantic color tokens (`background`, `foreground`, `primary`, `secondary`, `destructive`, `muted`, `accent`, `popover`, `card`, `border`, `input`, `ring`), responsive breakpoints, keyframe animations, and accordion/marquee layout utilities.
-- **CSS Variable Normalization**: In `app/globals.css`, established standardized HSL design tokens for both light and dark modes, ensuring consistent contrast ratios exceeding WCAG AA standards (4.5:1 for normal text).
-- **Component Stabilization**:
-  - `components/Card.jsx`: Bypassed the 50,000-iteration trigonometric loop, replacing it with GPU-accelerated CSS transitions, proper hover elevation, and contrast calculation based on standard RGB luminance formulas.
-  - `components/Departments.jsx`: Replaced the 6-stage cascading `useEffect` chain and synchronous bubble sort with a single, memoized catalog consolidation hook (`React.useMemo`), eliminating redundant re-renders.
-  - `components/BentoGridComp.jsx`: Stripped out over 400 lines of dead legacy comments, unused test scaffolding, and extraneous imports, restoring clean Bento card layout rendering.
-  - `components/Navbar.jsx`: Implemented a clean, sticky navigation bar featuring contextual navigation links, responsive mobile drawer navigation via Lucide icons, dynamic session indicator (`UserButton`), and theme switching.
-  - `components/ThemeToggle.jsx`: Implemented hydration-safe theme switching to prevent Next.js SSR markup mismatches.
-- **Responsive Skeletons & Zero-CLS Boundaries**: Added specialized Next.js loading boundaries (`loading.jsx`) with animated pulse skeletons across critical routes:
+To give the portal a clean, modern look and smooth feel, the styles and components were fixed:
+- **Tailwind Styles Setup**: Configured `tailwind.config.js` with proper colors (`background`, `foreground`, `primary`, `muted`, `card`, `border`), responsive layouts, and smooth animations.
+- **CSS Variables Cleanup**: In `app/globals.css`, set up proper color variables for light and dark modes so text is always easy to read.
+- **Component Fixes**:
+  - `components/Card.jsx`: Removed the heavy 50,000-step loop and replaced it with smooth CSS transitions.
+  - `components/Departments.jsx`: Cleaned up the effect chains and used `React.useMemo` to stop unnecessary re-renders.
+  - `components/BentoGridComp.jsx`: Removed unused code and old tests to restore the Bento grid layout.
+  - `components/Navbar.jsx`: Added a sticky navigation bar with clean links, mobile menu, user profile button, and theme switcher.
+  - `components/ThemeToggle.jsx`: Fixed theme switching so it works safely without server/client mismatch errors.
+- **Loading Skeletons**: Added `loading.jsx` screens with pulse animations so users see clean placeholders instead of empty white space while data loads on:
   - `app/(pages)/join/[...joinIds]/loading.jsx`
   - `app/(pages)/admin/loading.jsx`
   - `app/(pages)/departments/loading.jsx`
 
 ### 1.3 Deprecation of Top-of-Page Alert Popups in Favor of Inline Form Validation
-- **Previous Broken Pattern**: The legacy form relied on native browser `alert()` popups or floating top-of-viewport alert banners. When a user submitted invalid data or omitted required department questions, a generic popup appeared at the top of the window. The form did not automatically scroll to the erroneous inputs, left invalid inputs unhighlighted, and offered no real-time guidance.
-- **Remediated Inline Architecture**:
-  - Integrated Zod schema validation (`lib/schemas.js`) directly with form state management.
-  - Implemented real-time per-field error tracking in `components/FormComp.jsx`:
-    - Inputs dynamically receive red border styling (`border-red-500 focus:ring-red-500`) and accessibility attributes (`aria-invalid="true"`).
-    - Clear, descriptive error messages appear immediately below the affected field (for example, "Please enter a valid 10-digit phone number", "Registration number must follow the format 21BCE0001", "This question requires at least 20 characters").
-    - On attempted submission with invalid inputs, the form automatically calculates the first offending field, smoothly scrolls it into view, and shifts keyboard focus to the input (`autofocus`).
-    - Jarring browser alert dialogs were completely eradicated, providing a frictionless, accessible user experience.
+- **Previous Issue**: The old form used browser alert popups when users made a mistake or skipped a question. The form did not show which field was wrong and did not scroll to the error.
+- **New Inline Validation**:
+  - Used Zod schema validation (`lib/schemas.js`) to check inputs directly.
+  - Added real-time error messages in `components/FormComp.jsx`:
+    - Fields with errors show a red border.
+    - Helpful error messages appear right under the field (for example, "Please enter a valid 10-digit phone number" or "Registration number must follow the format 21BCE0001").
+    - When a user tries to submit with errors, the form automatically scrolls to the first wrong field and highlights it.
+    - Browser alert popups were completely removed.
 
 ---
 
 ## Section 2: Security Handling and Hardening
 
 ### 2.1 Full Security Audit Overview (30 Vulnerabilities)
-A comprehensive, top-to-bottom security audit was performed across all application routes, API endpoints, database interactions, external integrations, and middleware guards. The audit triaged 30 documented vulnerabilities across four strict severity tiers:
-- **P0 (Critical - 5 Issues)**: Code execution vectors, unauthenticated administrative access, credential leakage, open database read/write permissions.
-- **P1 (High - 9 Issues)**: Insecure Direct Object References (IDOR), Server-Side Request Forgery (SSRF), race conditions in submission quotas, missing perimeter authorization, and email relay abuse.
-- **P2 (Medium - 8 Issues)**: Missing HTTP security headers, ReDoS risks, unbounded body parsing, sensitive error leakage, and unencrypted local storage PII drafts.
-- **P3 (Low / Informational - 8 Issues)**: Source map exposure, automated secret scanning gaps, strict subresource integrity, and environment configuration hygiene.
+A full security review was completed across all pages, APIs, database actions, and middleware. It identified and fixed 30 security issues across four priority levels:
+- **P0 (Critical - 5 Issues)**: Issues that could allow unauthorized access, data leaks, or unauthenticated admin access.
+- **P1 (High - 9 Issues)**: Missing access checks, database race conditions, missing input checks, and email relay misuse.
+- **P2 (Medium - 8 Issues)**: Missing security headers, denial of service risks, large payload handling, and draft data storage.
+- **P3 (Low / Informational - 8 Issues)**: Source map exposure, secret scan setup, and configuration cleanup.
 
-All 30 vulnerabilities have been fully remediated and verified. The full audit report is maintained in `/docs/security-audit.md`.
+All 30 issues have been resolved. The detailed audit notes are in `/docs/security-audit.md`.
 
 ### 2.2 Security Executive Summary Table
 
@@ -90,31 +90,26 @@ All 30 vulnerabilities have been fully remediated and verified. The full audit r
 | **PROD-08** | **P2** | Firestore Connection Pooling Singleton Pattern | `lib/db.ts` | Refactored Firebase Admin SDK initialization to prevent connection leaks across serverless lambdas | Remediated |
 
 ### 2.3 Deep Dive into Core Remediations
-- **IDOR Mitigation**:
-  - In `app/api/check-applications/route.js` and `app/api/check-department-submission/route.js`, client-provided query parameters identifying users were removed. The backend reads the identity exclusively from `session.user.email` derived from the cryptographically verified session cookie.
-  - In `app/api/shortlist/[id]/route.js`, unauthenticated or non-admin users attempting to inspect or alter candidate triage records receive HTTP 401 Unauthorized or HTTP 403 Forbidden.
-- **SSRF Protections**:
-  - In `next.config.mjs`, legacy permissive image domains were replaced with explicit `remotePatterns` restricting protocol (`https`), hostname, and port.
-  - All outbound webhooks and network calls validate the target URL against private network ranges (RFC 1918 `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, loopback `127.0.0.0/8`, and AWS/GCP metadata endpoints `169.254.169.254`).
-- **Concurrency Race-Condition Defenses**:
-  - In `app/api/submit-form/route.js`, application submission enforces a strict 2-department ceiling per applicant. To prevent concurrent burst requests from bypassing this ceiling, submissions are executed inside a Firestore transaction (`db.runTransaction()`). The transaction queries all existing submissions for `session.user.email`, evaluates count, verifies the applicant has not already applied to the target department, and commits the write atomically.
-- **Input Sanitization & Mass Assignment Defense**:
-  - All incoming request bodies are stripped to exact schemas validated by Zod (`lib/schemas.js`). Unknown fields injected by malicious actors (such as `role: 'admin'`, `status: 'shortlisted'`, or `approved: true`) are discarded prior to database persistence.
-- **HTTP Security Headers & Cookie Flags**:
-  - `middleware.js` and `next.config.mjs` enforce:
-    - `X-Frame-Options: DENY` (clickjacking defense)
-    - `X-Content-Type-Options: nosniff` (MIME confusion defense)
-    - `Referrer-Policy: strict-origin-when-cross-origin`
-    - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` (HSTS)
-    - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-  - Better Auth session cookies and state tokens are configured with `HttpOnly: true`, `Secure: true`, `SameSite: "lax"`, and path scoping, preventing cross-site exfiltration.
+- **Access Control Fixes**:
+  - In `app/api/check-applications/route.js` and `app/api/check-department-submission/route.js`, the backend no longer trusts user IDs sent by the client. It gets the user email directly from the secure session cookie.
+  - In `app/api/shortlist/[id]/route.js`, only verified admin users can view or update applicant review statuses.
+- **Request Safety and Image Whitelist**:
+  - In `next.config.mjs`, open image domains were replaced with a strict list of allowed HTTPS sources.
+  - Network requests check URLs to ensure they cannot reach private or internal network addresses.
+- **Preventing Race Conditions**:
+  - In `app/api/submit-form/route.js`, candidates can only apply to a maximum of 2 departments. To prevent duplicate submissions from fast simultaneous clicks, submissions run inside a Firestore transaction (`db.runTransaction()`). The database checks current application counts and writes the new application in one atomic step.
+- **Input Checking**:
+  - All incoming request data is validated against strict Zod schemas (`lib/schemas.js`). Unexpected fields sent by attackers (such as `role: 'admin'`) are automatically removed.
+- **Security Headers and Cookies**:
+  - `middleware.js` and `next.config.mjs` add standard security headers to all responses (`X-Frame-Options`, `X-Content-Type-Options`, `HSTS`, `CSP`).
+  - Session cookies use `HttpOnly`, `Secure`, and `SameSite` flags so they cannot be accessed by client scripts.
 
 ---
 
 ## Section 3: Branching Strategy and Version Control
 
 ### 3.1 Architecture Milestone Phases and Version Control Structure
-To maintain a clean audit trail and document project evolution across distinct technical milestones without fragmenting the physical git repository into redundant branches, the development lifecycle was organized into four core engineering phases leading directly into the integrated production branch:
+To keep a clear history of how the project developed without creating unnecessary branches, the work was organized into distinct phases leading into the main production branch:
 
 ```
 [original-ui-ux] (Baseline reference state)
@@ -136,81 +131,77 @@ To maintain a clean audit trail and document project evolution across distinct t
 ```
 
 1. **`original-ui-ux`**:
-   - The initial repository snapshot preserving early defects, broken styling, performance-freezing loops, and missing security perimeters for regression benchmarking.
+   - The initial project state kept as a reference.
 2. **Phase 1: `fix/ui-ux-recovery`**:
-   - Compartmentalizes all frontend stability patches: Tailwind color tokens, `globals.css` HSL variables, removal of synchronous loops in `Card.jsx` and `AllDepartments.jsx`, hydration safety, and transition from alert popups to real-time inline field validation.
+   - Frontend styling recovery, loop removals in `Card.jsx`, loading skeletons, and inline form errors.
 3. **Phase 2: `security/vulnerability-hardening`**:
-   - Houses the complete 30-vulnerability security remediation suite: role-based access control (RBAC), IDOR prevention, atomic transaction concurrency locks, Next.js security middleware, CSP headers, rate-limiting, and `.gitleaks.toml` secret scanning.
+   - The 30 security fixes including admin guards, database transactions, middleware protection, and rate limiting.
 4. **Phase 3: `feat/backend-storage-architecture`**:
-   - Focuses on backend persistence correctness: diagnosis and repair of the silent response storage bug, normalized schema storage for department-specific questions, read/write deduplication, and connection pooling.
+   - Fixing the form answer saving issue, organizing question responses, and improving database query efficiency.
 5. **Phase 4: `feat/enhanced-experience`**:
-   - Encapsulates candidate and administrative feature expansions: click-to-view department exploration, sticky contextual navigation, administrative 3-tier status triage (Waitlist, Shortlist, Reject) with direct row review, 6-digit OTP email verification, and `/privacy` and `/terms` compliance routes.
+   - Exploring departments before applying, 3-tier admin status (Waitlist, Shortlist, Reject), 6-digit email OTP verification, and legal terms.
 6. **Integrated Production Branch (`updated-ui-ux` / `main`)**:
-   - Represents the fully integrated, production-ready codebase passing all unit tests, security scans, and `npm run build` verification with zero warnings. Keeping these phases integrated on the primary working branch ensures full cohesion without merge drift or branch proliferation.
+   - The unified, production-ready codebase passing all builds and checks.
 
 ### 3.2 Migration and Merge History
-- Incremental cherry-picking and clean rebase-merging ensured that each phase was validated independently prior to consolidation.
-- Verification steps at each merge gate included:
-  1. Static TypeScript / JSX syntax verification.
-  2. Clean build compilation (`npm run build`).
-  3. Secret scanning via `.gitleaks.toml` rules.
-  4. Codebase sanitation sweep ensuring zero emojis in source code, documentation, and commit messages.
+- Each phase was tested and reviewed before being merged into the primary branch.
+- Verification steps at each stage included:
+  1. Checking syntax and TypeScript/JSX types.
+  2. Running a clean build (`npm run build`).
+  3. Scanning for exposed secrets using Gitleaks rules.
 
 ---
 
 ## Section 4: Comprehensive System Additions and Architecture Enhancements
 
 ### 4.1 Backend Storage Malfunction: Diagnosis and Resolution
-- **Diagnosis of Original Malfunction**:
-  - In the initial codebase, candidate submissions frequently succeeded on the frontend but resulted in corrupted or incomplete records in the Firestore `formData` collection.
-  - Custom department prompts (such as technical architecture questions, design portfolio links, or management case studies) and the general motivation prompt ("Why do you want to join Organization Name?") were either omitted entirely or stored as empty objects.
-  - The root cause was an unhandled schema divergence between the dynamic form state generator in `components/FormComp.jsx` and the backend receiver in `app/api/submit-form/route.js`. The backend expected a static flat object, whereas dynamic department fields were nested inside a dynamic dictionary. Furthermore, unhandled exception paths in the Firestore write callback failed silently without returning HTTP 500 to the client, leading users to believe their answers had been saved when they were dropped.
-- **Hardened Atomic Mutation Architecture**:
-  - The backend payload handler was rewritten to accept and normalize both key-value dictionary mappings (`Record<string, string>`) and structured tuple arrays (`Array<[string, string]>`).
-  - Structured data normalization ensures all answers are persisted cleanly under:
-    - `Questions`: Dictionary mapping exact prompt text to the candidate's verified response.
-    - `Why do you want to join GDG?`: Top-level normalized field ensuring organizational intent is immediately accessible in administrative queries.
-    - Department-specific fields dynamically merged without data loss.
-  - The mutation was transitioned to a Firestore atomic transaction (`db.runTransaction()`). If any validation constraint fails, the entire transaction aborts cleanly, rolling back state and returning a structured JSON error response (`{ success: false, message: "..." }`) with appropriate HTTP status codes (400, 403, or 500).
+- **Original Issue**:
+  - Previously, when a candidate submitted an application, the form appeared to succeed on screen, but custom department answers and general motivation answers were missing or saved as empty objects in Firestore.
+  - This happened because the form component sent dynamic questions as nested objects, while the backend expected flat keys. In addition, database write errors were not returned properly to the user.
+- **The Fix**:
+  - The backend was rewritten to handle both key-value mappings and list pairs.
+  - All answers are now saved cleanly under:
+    - `Questions`: A map of each question to the candidate's answer.
+    - `Why do you want to join GDG?`: The applicant's general motivation answer saved at the top level for easy review.
+    - Department answers are merged without losing data.
+  - Submissions run inside a Firestore transaction (`db.runTransaction()`). If anything fails, the database rolls back cleanly and returns a clear error message with the right HTTP status code (400, 403, or 500).
 
 ### 4.2 Cost and Performance Optimizations
-- **Serverless Request Deduplication**:
-  - In serverless Next.js edge and Node.js lambdas, redundant user authentication lookups were causing up to 3 separate Firestore queries per page load. Implemented per-request memoization and cached session resolution via Better Auth cookies.
-- **Firestore Read/Write Reduction**:
-  - Replaced broad collection scans with targeted indexed queries. Instead of fetching the entire `formData` collection to calculate candidate application counts, the query utilizes composite Firestore indexes filtered by `Email` equality and limited to necessary fields.
-  - Department catalog data is statically generated at build time (`getStaticProps` / React Server Component cache), avoiding recurring database read operations for static organizational descriptions.
-- **Static Caching Strategies**:
-  - Marketing, informational, and legal routes (`/`, `/explore-departments`, `/departments`, `/privacy`, `/terms`) are prerendered as static HTML/JSON artifacts.
-  - Client-side data fetching for the admin candidate portal leverages SWR-style caching with background revalidation, reducing administrative read operations while maintaining fresh applicant records.
+- **Fewer Authentication Lookups**: Session data is cached in memory per request so the server does not look up the same user in Firestore multiple times on a single page load.
+- **Optimized Database Queries**:
+  - Replaced full collection scans with indexed queries looking up by email, reducing database read costs.
+  - Department list data is loaded statically at build time instead of querying the database on every visit.
+- **Static Page Caching**:
+  - Public pages (`/explore-departments`, `/departments`, `/privacy`, `/terms`) are pre-rendered as static pages.
+  - The admin page uses client caching to keep applicant lists responsive while minimizing database reads.
 
 ### 4.3 Information Architecture: Decoupling "Explore Departments" from "Apply Now"
-- **Architectural Rationale**:
-  - The legacy application conflated exploratory browsing with active application intake. Candidates visiting `/departments` were immediately prompted for credentials and confronted with form fields, deterring prospective applicants who merely wished to review available tracks.
-- **Decoupled User Flow**:
-  - **Explore Departments (`/explore-departments`)**: A dedicated informational hub where candidates can browse all 11 technical and non-technical departments (AI/ML, Web Dev, App Dev, Cloud & DevOps, Cyber Security, UI/UX, Competitive Programming, Management, Content, Media, and Outreach).
-  - **Click-to-View Modal Dossier**: Users can click any department card to trigger an interactive modal dossier detailing core responsibilities, recommended skillsets, tech stacks, and team culture without entering the application pipeline.
-  - **Apply Now (`/departments`)**: A focused application launchpad. Once candidates decide on their tracks, they navigate directly to `/departments` to select up to 2 departments and enter the unified submission flow.
-- **Sticky Contextual Navigation**:
-  - Centered navigation links in `components/Navbar.jsx` maintain persistent, unobstructed access to both "Explore" and "Apply Now" across all viewport positions.
+- **Why this was changed**:
+  - In the old portal, candidates who just wanted to learn about departments were immediately asked to sign in and fill out form fields.
+- **New User Flow**:
+  - **Explore Departments (`/explore-departments`)**: A public page where anyone can browse all 11 departments (AI/ML, Web Dev, App Dev, Cloud & DevOps, Cyber Security, UI/UX, Competitive Programming, Management, Content, Media, and Outreach).
+  - **Department Details Modal**: Clicking any department card opens a popup showing what the department does, what skills they look for, and the tools they use.
+  - **Apply Now (`/departments`)**: A focused application page where candidates select up to 2 departments and fill out their application.
+- **Clear Navigation**: The navigation bar has permanent links to both "Explore" and "Apply Now" so users can move between them easily.
 
 ### 4.4 Admin Panel Refactor: 3-Tier Status Management and Row Review
-- **Direct Row-Click Applicant Review Modal**:
-  - Replaced the clunky multi-step dialog flow with a single-click modal dossier. Clicking any candidate row in the administrative table immediately opens a comprehensive slide-over or centered modal displaying:
-    - Personal Details: Full Name, Email, Phone, Registration Number, Gender, Year of Study.
-    - Application Context: Target Department, Preference ranking (First/Second choice), Submission Timestamp.
-    - Detailed Responses: Organization motivation answers and all department-specific technical responses rendered in readable prose format.
-- **3-Tier Lifecycle Status Management**:
-  - Upgraded the binary "Shortlisted" boolean flag to an explicit 3-tier recruitment lifecycle:
-    1. **Waitlist** (`waitlisted`): Candidate meets qualifications but is pending final intake capacity.
-    2. **Shortlist** (`shortlisted`): Candidate is approved for round interviews or direct onboarding.
-    3. **Reject** (`rejected`): Candidate application has been reviewed and declined for the current recruitment cycle.
-  - Admin users can toggle between these three states directly within the applicant modal or from the table row dropdown.
-- **Optimistic State Updates & Desync Prevention**:
-  - Status transitions execute optimistic UI updates on the client, followed by atomic Firestore mutations (`app/api/shortlist/[id]/route.js`).
-  - Implemented multi-status filtering tabs (All, Pending, Waitlisted, Shortlisted, Rejected) and instant search by candidate name, email, or registration number.
+- **Quick Row-Click Applicant Review**:
+  - Clicking any candidate row in the admin table opens a detailed modal with:
+    - Personal Details: Name, Email, Phone, Registration Number, Gender, and Year of Study.
+    - Application Info: Chosen Department, Preference (1st or 2nd choice), and Submission Time.
+    - Full Responses: The applicant's motivation essay and all department question answers.
+- **3-Tier Review Status**:
+  - Changed the simple true/false shortlist flag into three clear recruitment stages:
+    1. **Waitlist** (`waitlisted`): The candidate meets criteria but is on hold.
+    2. **Shortlist** (`shortlisted`): The candidate is approved for interviews.
+    3. **Reject** (`rejected`): The candidate has been declined for this cycle.
+  - Admins can change status directly from the modal or from the table row.
+- **Fast Updates and Search**:
+  - Changing a status updates the UI immediately and saves to Firestore in the background.
+  - Admins can filter by status (All, Pending, Waitlisted, Shortlisted, Rejected) and search by candidate name, email, or registration number.
 
 ### 4.5 Two-Step 6-Digit OTP Email Verification Flow
-To protect the application against spam accounts, fake registrations, and unauthorized submissions, a complete 6-digit numeric OTP email verification system was architected and integrated for manual credential signups.
+To stop spam and fake accounts, a 6-digit email OTP system was built for manual email and password signups.
 
 ```
 Candidate Registers (Email + Password)
@@ -241,9 +232,9 @@ Candidate Submits 6-Digit OTP Directly On-Screen
                  ▼
 Backend Verifies Hash via Timing-Safe Equality Check
                  │
-  ┌──────────────┴──────────────┐
-  │ Valid                       │ Invalid / Expired
-  ▼                             ▼
+   ┌──────────────┴──────────────┐
+   │ Valid                       │ Invalid / Expired
+   ▼                             ▼
 - Marks user.emailVerified=true - Increments attempt counter
 - Deletes OTP record            - If attempts >= 3: deletes OTP & locks
 - Issues active session cookie  - Returns structured error message
@@ -251,67 +242,58 @@ Backend Verifies Hash via Timing-Safe Equality Check
 ```
 
 #### Detailed OTP Specifications:
-1. **Flow Architecture & In-App Experience**:
-   - When a user signs up manually via email and password, their Better Auth account is flagged with `emailVerified: false`. No active login session is issued.
-   - The user is transitioned immediately to the in-app OTP Entry Screen (`/auth/signin?mode=verify&email=...`).
-   - The screen features:
-     - A centered 6-digit numeric input with monospace font styling and wide letter spacing (`tracking-widest text-center text-2xl font-mono`).
-     - A live countdown timer starting at 10:00, indicating remaining validity.
-     - An attempt counter warning ("3 attempts left").
-     - A rate-limited "Resend OTP" button bound to a 60-second cooldown timer.
-   - The user verifies their account directly on the website by typing the 6 digits - no external verification links or email redirect URLs are required.
-2. **Cryptographic Generation & Delivery**:
-   - Generated via `crypto.randomInt(100000, 1000000)` in `lib/email-otp.js`.
-   - Delivered via Nodemailer SMTP transport using configured credentials (`EMAIL_USERNAME`, `EMAIL_PASSWORD`).
-   - **Graceful Development Fallback**: If SMTP credentials are not configured or are invalid in a local development environment, the dispatch function catches the condition, logs the code directly to the server terminal (`[DEV-OTP] Verification code for user@example.com: 123456`), and succeeds without throwing an unhandled exception.
-3. **Backend Storage & Hash Protection**:
-   - The plain-text OTP is never persisted in plain form.
-   - Stored in Firestore collection `otp_verifications` under document ID `email.toLowerCase()`.
-   - The stored document contains:
-     - `hash`: `sha256(otp + salt + BETTER_AUTH_SECRET)`
-     - `salt`: 16-byte random hex string.
-     - `expiresAt`: Current timestamp + 10 minutes.
-     - `attempts`: Failure counter (starts at 0).
-     - `createdAt`: ISO timestamp.
-4. **Brute-Force & Attack Mitigations**:
-   - **Timing-Safe Verification**: Comparison between the submitted OTP hash and the stored hash is executed using `crypto.timingSafeEqual` to defeat timing side-channel attacks.
-   - **3-Attempt Lockout**: If an incorrect OTP is entered, the failure counter increments. Upon the 3rd failed attempt, the OTP record is permanently invalidated and deleted from Firestore, forcing the user to request a new code.
-   - **Immediate Invalidation**: Upon successful verification, the OTP record is deleted immediately from the database.
-   - **Rate-Limiting**: The `/api/auth/otp/send` and `/api/auth/otp/resend` endpoints enforce an IP sliding-window rate limit (maximum 5 requests per 15 minutes) and a 60-second per-email cooldown.
-5. **Perimeter Enforcement**:
-   - Unverified candidate accounts are strictly prohibited from submitting application forms (`/api/submit-form` validates `session.user.emailVerified === true` and returns HTTP 403 Forbidden).
-   - Application status checks (`/api/check-applications`, `/api/check-department-submission`) reject unverified users with HTTP 403.
-   - The application form route (`app/(pages)/join/[...joinIds]/page.jsx`) detects unverified sessions and renders an on-page verification prompt redirecting to the OTP entry screen.
+1. **User Experience**:
+   - When a user signs up with email and password, their account is created as unverified.
+   - They are sent straight to the verification screen (`/auth/signin?mode=verify&email=...`).
+   - The screen shows:
+     - A clear 6-digit code input with monospace styling.
+     - A 10-minute countdown timer.
+     - An attempts counter ("3 attempts left").
+     - A "Resend Code" button with a 60-second cooldown.
+   - The user types the code right on the page without needing to click external links.
+2. **Code Generation and Email Sending**:
+   - Generates a random 6-digit number using `crypto.randomInt(100000, 1000000)`.
+   - Sends the email using Nodemailer (`EMAIL_USERNAME`, `EMAIL_PASSWORD`).
+   - In local development without email credentials, it prints the code directly to the terminal for easy testing.
+3. **Secure Storage**:
+   - The code itself is never saved in plain text.
+   - It is hashed using SHA-256 with a salt and secret, and stored in the `otp_verifications` collection for 10 minutes.
+4. **Protection Against Abuse**:
+   - Timing-safe check: Compares the submitted code securely using `crypto.timingSafeEqual`.
+   - 3-attempt limit: Entering the wrong code 3 times deletes the OTP record, requiring a new code.
+   - Once verified, the OTP is deleted immediately.
+   - Rate limits: Limits how often users can request new codes (up to 5 requests per 15 minutes).
+5. **Protecting the Application Form**:
+   - Unverified accounts cannot submit applications (`/api/submit-form` returns HTTP 403).
+   - If an unverified user visits the application page, they are shown a message asking them to verify first.
 
 ### 4.6 Legal and Compliance Routes
-- Implemented dedicated legal routes compliant with standard data protection guidelines:
-  - **`/privacy` (`app/privacy/page.jsx`)**: Exhaustive privacy policy detailing what applicant data is collected (Name, Email, Phone, Registration Number, Academic Year, Department preferences, Written responses), how it is processed and secured in Cloud Firestore, retention policies, and candidate data rights.
-  - **`/terms` (`app/terms/page.jsx`)**: Terms of service governing recruitment portal usage, applicant code of conduct, intellectual property of submitted materials, and recruitment evaluation disclaimers.
-- **Explicit Consent Collection**:
-  - The application form (`components/FormComp.jsx`) includes a mandatory consent agreement checkbox directly preceding the submission button.
-  - Candidates must explicitly consent to the Privacy Policy and Terms of Service before the submission button is unlocked, ensuring transparent and legally compliant candidate data processing.
+- Added standard legal policy pages:
+  - `/privacy`: Explains what data is collected (Name, Email, Phone, Registration Number, Department choices, Written answers), how it is stored securely in Firestore, and candidate rights.
+  - `/terms`: Sets rules for using the portal and submitting applications.
+- Explicit Consent:
+  - The application form (`components/FormComp.jsx`) includes a required checkbox for the Privacy Policy and Terms of Service before the submit button is enabled.
 
 ---
 
 ## Section 5: Verification and Build Validation
 
-The codebase was subjected to rigorous validation criteria:
-1. **Compilation Check**: Executed `npm run build`. The Next.js production compiler generated all static and dynamic routes cleanly with exit code 0.
-2. **Emoji Sanitization**: Executed an automated scan across the entire workspace using `scripts/check-emojis.js`. Zero emojis exist in code files, comments, markdown documentation, or commit messages.
-3. **Route Coverage**: All 27 server and client routes (`/`, `/admin`, `/auth/signin`, `/departments`, `/explore-departments`, `/privacy`, `/terms`, `/join/[...joinIds]`, `/api/auth/otp/*`, `/api/submit-form`, etc.) compile without warnings or broken dependencies.
+The codebase was verified with standard build and route checks:
+1. **Build Check**: Ran `npm run build`. The Next.js production build succeeded with exit code 0.
+2. **Route Coverage**: All 27 server and client routes compile cleanly without errors or broken dependencies.
 
 ---
 
 ## Section 6: Feature Additions Following UI/UX Consolidation
 
-This section details the architectural features and user experience components added to the portal. In accordance with milestone guidelines, this section focuses exclusively on what was added and why it was added, accompanied by code snippets and their respective file paths.
+This section details the features and user experience components added to the portal. It explains what was added and why it was added, with the file name and code snippet for each change.
 
 ### 6.1 Manual Credential Login 6-Digit Email OTP Challenge
 
 - **What was added**:
-  A dedicated API route (`/api/auth/login-otp`) that receives candidate credentials (email and password), validates them against the encrypted password hash in Firestore, and generates a time-sensitive 6-digit numeric OTP. The OTP is dispatched to the user's email via Nodemailer (or logged to the server terminal during local development). Upon receipt, the frontend shifts the user into the on-screen 6-digit OTP verification view (`mode=verify`) to complete session creation.
+  A new API endpoint (`/api/auth/login-otp`) for manual email and password logins. When a user enters their credentials, the server verifies the password and creates a 6-digit verification code. This code is sent to their email address (or printed in the terminal during development). The screen then asks the user to enter the code to complete their login.
 - **Why it was added**:
-  To protect candidate accounts by requiring multi-factor email ownership verification for manual password authentication, ensuring unauthorized credential access is prevented while keeping verification completely inside the portal UI without external redirect links.
+  To make sure that manual password logins have the same level of email verification as new signups, keeping accounts safe without needing external email links.
 
 File: `app/api/auth/login-otp/route.js`
 ```javascript
@@ -375,9 +357,9 @@ export async function POST(req) {
 ### 6.2 Dual-Tab Authentication Architecture (Sign Up Left, Log In Right)
 
 - **What was added**:
-  Re-architected both the navigation bar controls (`components/NavBar.jsx`) and the primary authentication portal (`app/auth/signin/page.jsx`) to present a standard two-tab switcher where "Sign Up" is positioned on the left and "Log In" is positioned on the right. Both desktop header and mobile drawer navigation route directly to the respective modes via URL parameters (`/auth/signin?mode=signup` and `/auth/signin?mode=login`).
+  Updated the navbar (`components/NavBar.jsx`) and the login page (`app/auth/signin/page.jsx`) to show a standard two-tab switcher with "Sign Up" on the left and "Log In" on the right. Links in both the desktop header and mobile menu open the correct tab directly (`/auth/signin?mode=signup` and `/auth/signin?mode=login`).
 - **Why it was added**:
-  To conform to universal web conventions, establishing visual hierarchy and immediate separation between new candidate registration and returning candidate or administrator login flows.
+  To follow standard web design, making it clear where new applicants create an account and where existing users log in.
 
 File: `components/NavBar.jsx`
 ```jsx
@@ -444,9 +426,9 @@ File: `app/auth/signin/page.jsx`
 ### 6.3 Account Creation Exclusivity Guard on Sign Up Tab
 
 - **What was added**:
-  Added verification logic to the Sign Up form handler. If an applicant submits an email address that already belongs to an existing account, registration is halted, an alert message is rendered ("An account with this email already exists"), and an inline shortcut button ("Switch to Log In tab") is provided.
+  Added a check when submitting the Sign Up form. If an email address already has an account, the form stops, shows an error ("An account with this email already exists"), and displays a quick link button to switch to the Log In tab.
 - **Why it was added**:
-  To ensure the Sign Up tab is strictly utilized for creating new applicant accounts rather than ambiguous re-login attempts, directing existing users to the proper credential or OAuth login workflow.
+  To make sure the Sign Up tab is only used for creating new accounts, guiding returning users to log in instead.
 
 File: `app/auth/signin/page.jsx`
 ```jsx
@@ -468,9 +450,9 @@ if (mode === "signup") {
 ### 6.4 Legal Agreement Notice in Onboarding Notice Modal
 
 - **What was added**:
-  Integrated an informational legal agreement footer into `components/PopupComp.jsx` (the modal dialog presented to candidates detailing department selection rules). The footer contains direct markdown links to `/privacy` and `/terms`.
+  Added a notice at the bottom of the recruitment rules popup (`components/PopupComp.jsx`). It states: "By continuing, you agree to our Privacy Policy and User Agreement." with direct links to both pages.
 - **Why it was added**:
-  To ensure full legal compliance by informing prospective candidates of the portal's data protection standards, code of conduct, and evaluation terms before they begin department selection or submit sensitive personal details.
+  To ensure applicants are aware of the rules, terms, and privacy policies before they start picking departments or submitting personal details.
 
 File: `components/PopupComp.jsx`
 ```jsx
@@ -508,9 +490,9 @@ File: `components/PopupComp.jsx`
 ### 6.5 High-Contrast Domain Badges and Enlarged Dismiss Controls
 
 - **What was added**:
-  Enhanced the domain pills in `app/(pages)/explore-departments/page.jsx` and `components/DepartmentDetailModal.jsx` using high-opacity primary tokens (`bg-primary/20 text-primary border-primary/40 font-semibold`). In addition, upgraded dialog and toast dismiss controls in `components/ui/dialog.jsx` and `components/ui/toast.jsx` with enlarged circular backgrounds and 20px close cross icons (`h-5 w-5`).
+  Made department domain badges easier to see on explore-departments and department modals by increasing their color contrast and opacity. Also enlarged close buttons on modals and notifications so they are easier to click or tap.
 - **Why it was added**:
-  To maintain WCAG AA contrast against varied background card gradients in both light and dark themes, while increasing the clickable touch target of modal close buttons for improved usability on desktop and mobile devices.
+  To make text legible across both light and dark backgrounds, and to make closing popups easy on mobile and desktop screens.
 
 File: `app/(pages)/explore-departments/page.jsx`
 ```jsx
@@ -531,9 +513,9 @@ File: `components/ui/dialog.jsx`
 ### 6.6 Multi-Format Department Route Resolver
 
 - **What was added**:
-  Enhanced the dynamic route handler in `app/(pages)/join/[...joinIds]/page.jsx` to resolve both normalized human-readable department slugs (e.g., `/join/management`, `/join/web-dev`, `/join/ai-ml`) and numerical identifiers (e.g., `/join/dept-1`).
+  Updated the dynamic route handler in `app/(pages)/join/[...joinIds]/page.jsx` so it recognizes readable department names in URLs (like `/join/management`, `/join/web-dev`, `/join/ai-ml`) as well as department IDs (like `/join/dept-1`).
 - **Why it was added**:
-  To provide clean, memorable, and shareable URLs for promotional campaigns across college student channels while maintaining backwards compatibility with legacy department links.
+  To provide simple, readable links that can be shared in announcements while keeping existing department links working.
 
 File: `app/(pages)/join/[...joinIds]/page.jsx`
 ```javascript
@@ -551,9 +533,9 @@ const found = DEPARTMENTS_DATA.find((d) => {
 ### 6.7 Optimized Sign-Out Transition Duration
 
 - **What was added**:
-  Configured explicit toast duration and redirection timing on `app/auth/signout/page.jsx` to conclude the sign-out process in under 1.5 seconds.
+  Shortened the sign-out notification and redirect delay in `app/auth/signout/page.jsx` so signing out takes less than 1.5 seconds.
 - **Why it was added**:
-  To reduce unnecessary wait times and provide an immediate, seamless transition back to the public portal upon signing out.
+  To keep the experience quick and responsive without leaving the user waiting on a sign-out screen.
 
 File: `app/auth/signout/page.jsx`
 ```jsx
@@ -561,4 +543,3 @@ await authClient.signOut();
 toast.success("Signed out successfully", { duration: 900, dismissible: true });
 router.push("/");
 ```
-
