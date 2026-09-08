@@ -32,8 +32,11 @@ export default function TermsOfServicePage() {
       <main id="main-content" className="flex-1 py-12 sm:py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Header */}
-          <div className="space-y-4 border-b border-border/40 pb-8">
-            <Link href="/" className="inline-flex items-center text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2">
+          <div className="flex flex-col items-start gap-4 border-b border-border/40 pb-8">
+            <Link
+              href="/"
+              className="inline-flex items-center text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
               <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
               <span>Back to Home</span>
             </Link>

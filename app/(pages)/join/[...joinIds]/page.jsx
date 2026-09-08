@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { notFound } from "next/navigation";
+import React, { useState } from "react";
+import { useRouter, useParams, notFound } from "next/navigation";
 import { reviews } from "@/constants/index";
 import NavBar from "@/components/NavBar";
 import FormComp from "@/components/FormComp";
@@ -13,38 +12,40 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Lock, ArrowRight, Mail } from "lucide-react";
 
+export function findDepartment(identifier) {
+  if (!identifier) return null;
+  const raw = decodeURIComponent(String(identifier)).trim().toLowerCase();
+  const stripped = raw.replace(/[^a-z0-9]/g, "");
+
+  return (
+    reviews.find((dept) => {
+      if (dept.id.toLowerCase() === raw) return true;
+      if (dept.name.toLowerCase() === raw) return true;
+      const deptStripped = dept.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (deptStripped === stripped) return true;
+      if (dept.name.toLowerCase().startsWith(raw) && raw.length >= 3) return true;
+      return false;
+    }) || null
+  );
+}
+
 const JoinDepartmentPage = ({ params }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [departmentParamIds, setDepartmentParamIds] = useState([]);
-  const [resolvedDepartment1, setResolvedDepartment1] = useState(null);
-  const [resolvedDepartment2, setResolvedDepartment2] = useState(null);
-
   const router = useRouter();
+  const routeParams = useParams();
   const { data: session, isPending } = authClient.useSession();
-
-  useEffect(() => {
-    if (params?.joinIds) {
-      setDepartmentParamIds([...params.joinIds]);
-    }
-  }, [params]);
-
-  useEffect(() => {
-    if (departmentParamIds.length > 0) {
-      const d1 = reviews.find((d) => d.id === departmentParamIds[0]);
-      setResolvedDepartment1(d1 || null);
-    }
-  }, [departmentParamIds]);
-
-  useEffect(() => {
-    if (departmentParamIds.length > 1) {
-      const d2 = reviews.find((d) => d.id === departmentParamIds[1]);
-      setResolvedDepartment2(d2 || null);
-    }
-  }, [departmentParamIds]);
 
   const user = session?.user;
   const isSignedIn = !!user;
   const isEmailVerified = user?.emailVerified !== false;
+
+  const rawIds = routeParams?.joinIds || params?.joinIds || [];
+  const ids = Array.isArray(rawIds) ? rawIds : rawIds ? [rawIds] : [];
+  const resolvedDepartments = ids.map(findDepartment).filter(Boolean);
+  const valid =
+    ids.length >= 1 &&
+    ids.length <= 2 &&
+    resolvedDepartments.length === ids.length;
 
   if (isPending) {
     return (
@@ -58,17 +59,11 @@ const JoinDepartmentPage = ({ params }) => {
     );
   }
 
-  const ids = Array.isArray(params?.joinIds) ? params.joinIds : [];
-  const valid =
-    ids.length >= 1 &&
-    ids.length <= 2 &&
-    ids.every((id) => reviews.some((dept) => dept.id === id));
-
   if (!valid) {
     notFound();
   }
 
-  const departments = reviews.filter((dept) => ids.includes(dept.id));
+  const departments = resolvedDepartments;
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">

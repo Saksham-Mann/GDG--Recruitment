@@ -254,10 +254,10 @@ const DepartmentsContent = () => {
               <button
                 type="button"
                 onClick={() => setSelectionNotice(null)}
-                className="p-1 rounded-md text-current hover:bg-current/10 transition-colors"
+                className="p-1.5 rounded-lg text-current hover:bg-current/15 transition-colors"
                 aria-label="Dismiss limit warning"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           )}
@@ -287,16 +287,15 @@ const DepartmentsContent = () => {
                       {/* Header Row: Icon & Status Badge */}
                       <div className="flex items-center justify-between gap-2 mb-4">
                         <div
-                          className="flex h-12 w-12 items-center justify-center rounded-xl shadow-sm"
+                          className="flex h-12 w-12 items-center justify-center rounded-xl shadow-sm border border-border/50 bg-neutral-900/10 dark:bg-neutral-900/80"
                           style={{
-                            backgroundColor: department.tone ? `${department.tone}20` : "rgba(59, 130, 246, 0.1)",
                             color: department.tone || "#3b82f6",
                           }}
                         >
                           {IconComponent ? (
-                            <IconComponent className="h-6 w-6" />
+                            <IconComponent className="h-6 w-6 stroke-[2.2] drop-shadow-xs" style={{ opacity: 1 }} />
                           ) : (
-                            <Layers className="h-6 w-6" />
+                            <Layers className="h-6 w-6 stroke-[2.2] drop-shadow-xs" style={{ opacity: 1 }} />
                           )}
                         </div>
 

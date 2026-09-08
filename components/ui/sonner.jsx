@@ -8,9 +8,11 @@ const Toaster = ({
   const { theme = "system" } = useTheme()
 
   return (
-    (<Sonner
+    <Sonner
       theme={theme}
       className="toaster group"
+      closeButton
+      duration={3000}
       toastOptions={{
         classNames: {
           toast:
@@ -20,9 +22,11 @@ const Toaster = ({
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton:
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          closeButton:
+            "group-[.toast]:!bg-muted/80 group-[.toast]:!text-foreground group-[.toast]:!border group-[.toast]:!border-border/60 hover:group-[.toast]:!bg-muted transition-colors",
         },
       }}
-      {...props} />)
+      {...props} />
   );
 }
 

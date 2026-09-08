@@ -178,6 +178,7 @@ const DataTable = ({ data }) => {
     () => [
       {
         Header: "Sr No",
+        id: "sr_no",
         accessor: (row, index) => index + 1,
       },
       {
@@ -185,7 +186,7 @@ const DataTable = ({ data }) => {
         accessor: "Name",
       },
       {
-        Header: "RegistrationNumber",
+        Header: "Registration Number",
         accessor: "RegistrationNumber",
       },
       {
@@ -202,7 +203,8 @@ const DataTable = ({ data }) => {
       },
       {
         Header: "Preference",
-        accessor: "Pref",
+        id: "preference",
+        accessor: (row) => row.Pref || row.preference || row.departmentPreference || "1st",
       },
       {
         Header: "Review Status",
@@ -373,8 +375,9 @@ const DataTable = ({ data }) => {
                   <TableHead
                     key={header.id || `h-${hIndex}`}
                     {...header.getHeaderProps(header.getSortByToggleProps())}
+                    className="whitespace-nowrap px-3 py-3"
                   >
-                    <div className="inline-flex gap-1 items-center">
+                    <div className="inline-flex gap-1.5 items-center">
                       {header.render("Header")}
                       <FaSortAmountDownAlt className="text-muted-foreground text-xs" />
                     </div>

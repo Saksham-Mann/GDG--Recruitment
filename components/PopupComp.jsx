@@ -9,12 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Link from "next/link";
 import { ArrowRight, Info } from "lucide-react";
 
 const PopupComp = ({ isOpen, onClose, PopupData }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md border-border bg-card/95 backdrop-blur-md p-6 sm:rounded-2xl shadow-2xl">
+      <DialogContent className="max-w-lg border-border bg-card/95 backdrop-blur-md p-6 sm:rounded-2xl shadow-2xl">
         <DialogHeader className="space-y-2 text-left">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -42,10 +43,30 @@ const PopupComp = ({ isOpen, onClose, PopupData }) => {
           </div>
         )}
 
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border/30">
+          <p className="text-xs text-muted-foreground text-center sm:text-left leading-relaxed">
+            By continuing, you agree to our{" "}
+            <Link
+              href="/privacy"
+              onClick={onClose}
+              className="font-medium text-primary underline underline-offset-2 hover:opacity-80 transition-opacity"
+            >
+              Privacy Policy
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/terms"
+              onClick={onClose}
+              className="font-medium text-primary underline underline-offset-2 hover:opacity-80 transition-opacity"
+            >
+              User Agreement
+            </Link>
+            .
+          </p>
+
           <Button
             onClick={onClose}
-            className="group font-medium shadow-md transition-all hover:shadow-primary/25"
+            className="group font-medium shadow-md transition-all hover:shadow-primary/25 shrink-0 w-full sm:w-auto"
           >
             <span>Understood</span>
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />

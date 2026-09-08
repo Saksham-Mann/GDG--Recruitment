@@ -135,14 +135,14 @@ const NavBar = () => {
             </div>
           ) : !isAuthenticated ? (
             <div className="hidden sm:flex items-center gap-1.5 animate-in fade-in-0 duration-150 ease-out motion-reduce:animate-none">
-              <Link href="/auth/signin">
-                <Button variant="ghost" size="sm" className="rounded-full font-medium text-muted-foreground hover:text-foreground">
-                  Sign In
-                </Button>
-              </Link>
               <Link href="/auth/signin?mode=signup">
                 <Button size="sm" className="rounded-full font-medium shadow-sm transition-all hover:shadow-primary/20">
                   Sign Up
+                </Button>
+              </Link>
+              <Link href="/auth/signin?mode=login">
+                <Button variant="ghost" size="sm" className="rounded-full font-medium text-muted-foreground hover:text-foreground">
+                  Log In
                 </Button>
               </Link>
             </div>
@@ -199,21 +199,21 @@ const NavBar = () => {
             {!isAuthenticated && (
               <div className="pt-2 border-t border-border/40 mt-1 flex flex-col gap-2">
                 <Link
-                  href="/auth/signin"
-                  onClick={() => setMobileDrawerOpen(false)}
-                  className="w-full flex items-center justify-center"
-                >
-                  <Button variant="outline" className="w-full rounded-xl font-semibold">
-                    Sign In to Portal
-                  </Button>
-                </Link>
-                <Link
                   href="/auth/signin?mode=signup"
                   onClick={() => setMobileDrawerOpen(false)}
                   className="w-full flex items-center justify-center"
                 >
                   <Button className="w-full rounded-xl font-semibold shadow-md">
-                    Create Candidate Account
+                    Sign Up
+                  </Button>
+                </Link>
+                <Link
+                  href="/auth/signin?mode=login"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className="w-full flex items-center justify-center"
+                >
+                  <Button variant="outline" className="w-full rounded-xl font-semibold">
+                    Log In to Portal
                   </Button>
                 </Link>
               </div>

@@ -106,13 +106,13 @@ export default function ExploreDepartmentsPage() {
                     {/* Top Floating Badge */}
                     <div className="absolute top-3 left-3 pointer-events-none">
                       <div
-                        className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md backdrop-blur-md border border-white/20"
+                        className="flex h-11 w-11 items-center justify-center rounded-xl shadow-lg backdrop-blur-xl border border-white/30 bg-neutral-950/80 dark:bg-neutral-900/90"
                         style={{
-                          backgroundColor: toneColor ? `${toneColor}30` : "rgba(59, 130, 246, 0.2)",
                           color: toneColor || "#3b82f6",
+                          boxShadow: toneColor ? `0 4px 14px ${toneColor}40` : "0 4px 14px rgba(0,0,0,0.4)",
                         }}
                       >
-                        <IconComponent className="h-5 w-5" />
+                        <IconComponent className="h-6 w-6 stroke-[2.2] drop-shadow-md" style={{ opacity: 1 }} />
                       </div>
                     </div>
 

@@ -61,13 +61,13 @@ export default function DepartmentDetailModal({
           {/* Department Icon Pill */}
           <div className="absolute bottom-4 left-6 sm:left-8 flex items-center gap-3">
             <div
-              className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg backdrop-blur-md border border-white/20"
+              className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl backdrop-blur-xl border border-white/30 bg-neutral-950/85 dark:bg-neutral-900/95"
               style={{
-                backgroundColor: toneColor ? `${toneColor}30` : "rgba(59, 130, 246, 0.2)",
                 color: toneColor || "#3b82f6",
+                boxShadow: toneColor ? `0 6px 20px ${toneColor}40` : "0 6px 20px rgba(0,0,0,0.5)",
               }}
             >
-              <IconComponent className="h-7 w-7" />
+              <IconComponent className="h-8 w-8 stroke-[2.2] drop-shadow-md" style={{ opacity: 1 }} />
             </div>
             <div>
               <Badge
