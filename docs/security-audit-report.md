@@ -6,7 +6,7 @@ This security audit and code review was conducted across the recruitment portal 
 
 The audit evaluated session management, token validation, protected route handling, server components, API route handlers, input sanitization, Firestore database security rules, secret management, client-side data handling, and HTTP security headers.
 
-While public-facing candidate forms incorporate client-side validation and session checks on submission, the audit identified **multiple critical vulnerabilities**—most notably that the `/admin` portal and its backing APIs lack server-side authorization guards, allowing unauthenticated attackers to dump confidential applicant data, modify applicant statuses, send arbitrary emails via an open relay, and bypass database security rules.
+While public-facing candidate forms incorporate client-side validation and session checks on submission, the audit identified **multiple critical vulnerabilities** - most notably that the `/admin` portal and its backing APIs lack server-side authorization guards, allowing unauthenticated attackers to dump confidential applicant data, modify applicant statuses, send arbitrary emails via an open relay, and bypass database security rules.
 
 ---
 

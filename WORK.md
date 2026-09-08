@@ -259,7 +259,7 @@ Backend Verifies Hash via Timing-Safe Equality Check
      - A live countdown timer starting at 10:00, indicating remaining validity.
      - An attempt counter warning ("3 attempts left").
      - A rate-limited "Resend OTP" button bound to a 60-second cooldown timer.
-   - The user verifies their account directly on the website by typing the 6 digits—no external verification links or email redirect URLs are required.
+   - The user verifies their account directly on the website by typing the 6 digits - no external verification links or email redirect URLs are required.
 2. **Cryptographic Generation & Delivery**:
    - Generated via `crypto.randomInt(100000, 1000000)` in `lib/email-otp.js`.
    - Delivered via Nodemailer SMTP transport using configured credentials (`EMAIL_USERNAME`, `EMAIL_PASSWORD`).
@@ -299,3 +299,266 @@ The codebase was subjected to rigorous validation criteria:
 1. **Compilation Check**: Executed `npm run build`. The Next.js production compiler generated all static and dynamic routes cleanly with exit code 0.
 2. **Emoji Sanitization**: Executed an automated scan across the entire workspace using `scripts/check-emojis.js`. Zero emojis exist in code files, comments, markdown documentation, or commit messages.
 3. **Route Coverage**: All 27 server and client routes (`/`, `/admin`, `/auth/signin`, `/departments`, `/explore-departments`, `/privacy`, `/terms`, `/join/[...joinIds]`, `/api/auth/otp/*`, `/api/submit-form`, etc.) compile without warnings or broken dependencies.
+
+---
+
+## Section 6: Feature Additions Following UI/UX Consolidation
+
+This section details the architectural features and user experience components added to the portal. In accordance with milestone guidelines, this section focuses exclusively on what was added and why it was added, accompanied by code snippets and their respective file paths.
+
+### 6.1 Manual Credential Login 6-Digit Email OTP Challenge
+
+- **What was added**:
+  A dedicated API route (`/api/auth/login-otp`) that receives candidate credentials (email and password), validates them against the encrypted password hash in Firestore, and generates a time-sensitive 6-digit numeric OTP. The OTP is dispatched to the user's email via Nodemailer (or logged to the server terminal during local development). Upon receipt, the frontend shifts the user into the on-screen 6-digit OTP verification view (`mode=verify`) to complete session creation.
+- **Why it was added**:
+  To protect candidate accounts by requiring multi-factor email ownership verification for manual password authentication, ensuring unauthorized credential access is prevented while keeping verification completely inside the portal UI without external redirect links.
+
+File: `app/api/auth/login-otp/route.js`
+```javascript
+export async function POST(req) {
+  try {
+    const ip = getClientIp(req);
+    const ipLimit = rateLimit(`login_otp_ip_${ip}`, { limit: 15, windowMs: 15 * 60 * 1000 });
+    if (!ipLimit.success) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
+    const { email, password } = parseResult.data;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const { connect } = await import("@/lib/db");
+    const { verifyPassword } = await import("better-auth/crypto");
+    const db = await connect();
+
+    let userSnap = await db.collection("users").where("email", "==", normalizedEmail).get();
+    if (userSnap.empty) {
+      userSnap = await db.collection("user").where("email", "==", normalizedEmail).get();
+    }
+
+    const isPasswordValid = await verifyPassword({
+      hash: accountData.password,
+      password,
+    });
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: "Invalid email or password. Please verify your credentials or sign up." },
+        { status: 401 }
+      );
+    }
+
+    const result = await createAndSendOtp(normalizedEmail);
+    return NextResponse.json(
+      {
+        message: result.devMode
+          ? "Verification code generated in development mode."
+          : "Verification code sent to your email address.",
+        expiresIn: result.expiresIn,
+        resendCooldown: result.resendCooldown,
+        devMode: result.devMode,
+        devOtp: result.devOtp,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### 6.2 Dual-Tab Authentication Architecture (Sign Up Left, Log In Right)
+
+- **What was added**:
+  Re-architected both the navigation bar controls (`components/NavBar.jsx`) and the primary authentication portal (`app/auth/signin/page.jsx`) to present a standard two-tab switcher where "Sign Up" is positioned on the left and "Log In" is positioned on the right. Both desktop header and mobile drawer navigation route directly to the respective modes via URL parameters (`/auth/signin?mode=signup` and `/auth/signin?mode=login`).
+- **Why it was added**:
+  To conform to universal web conventions, establishing visual hierarchy and immediate separation between new candidate registration and returning candidate or administrator login flows.
+
+File: `components/NavBar.jsx`
+```jsx
+<div className="hidden sm:flex items-center gap-1.5 animate-in fade-in-0 duration-150 ease-out motion-reduce:animate-none">
+  <Link href="/auth/signin?mode=signup">
+    <Button size="sm" className="rounded-full font-medium shadow-sm transition-all hover:shadow-primary/20">
+      Sign Up
+    </Button>
+  </Link>
+  <Link href="/auth/signin?mode=login">
+    <Button variant="ghost" size="sm" className="rounded-full font-medium text-muted-foreground hover:text-foreground">
+      Log In
+    </Button>
+  </Link>
+</div>
+```
+
+File: `app/auth/signin/page.jsx`
+```jsx
+<div className="grid grid-cols-2 rounded-xl bg-muted/60 p-1 border border-border/40">
+  <button
+    type="button"
+    onClick={() => {
+      setMode("signup");
+      setFieldErrors({});
+      setAuthError("");
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("mode", "signup");
+        window.history.replaceState(null, "", url.toString());
+      }
+    }}
+    className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
+      mode === "signup"
+        ? "bg-background text-foreground shadow-sm"
+        : "text-muted-foreground hover:text-foreground"
+    }`}
+  >
+    Sign Up
+  </button>
+  <button
+    type="button"
+    onClick={() => {
+      setMode("login");
+      setFieldErrors({});
+      setAuthError("");
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("mode", "login");
+        window.history.replaceState(null, "", url.toString());
+      }
+    }}
+    className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
+      mode === "login"
+        ? "bg-background text-foreground shadow-sm"
+        : "text-muted-foreground hover:text-foreground"
+    }`}
+  >
+    Log In
+  </button>
+</div>
+```
+
+### 6.3 Account Creation Exclusivity Guard on Sign Up Tab
+
+- **What was added**:
+  Added verification logic to the Sign Up form handler. If an applicant submits an email address that already belongs to an existing account, registration is halted, an alert message is rendered ("An account with this email already exists"), and an inline shortcut button ("Switch to Log In tab") is provided.
+- **Why it was added**:
+  To ensure the Sign Up tab is strictly utilized for creating new applicant accounts rather than ambiguous re-login attempts, directing existing users to the proper credential or OAuth login workflow.
+
+File: `app/auth/signin/page.jsx`
+```jsx
+if (mode === "signup") {
+  const checkRes = await fetch(`/api/auth/otp/send`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: trimmedEmail }),
+  });
+  const checkData = await checkRes.json();
+  if (checkRes.ok || checkRes.status === 429) {
+    setAuthError("An account with this email already exists. Please switch to the Log In tab.");
+    setSubmitting(false);
+    return;
+  }
+}
+```
+
+### 6.4 Legal Agreement Notice in Onboarding Notice Modal
+
+- **What was added**:
+  Integrated an informational legal agreement footer into `components/PopupComp.jsx` (the modal dialog presented to candidates detailing department selection rules). The footer contains direct markdown links to `/privacy` and `/terms`.
+- **Why it was added**:
+  To ensure full legal compliance by informing prospective candidates of the portal's data protection standards, code of conduct, and evaluation terms before they begin department selection or submit sensitive personal details.
+
+File: `components/PopupComp.jsx`
+```jsx
+<div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border/30">
+  <p className="text-xs text-muted-foreground text-center sm:text-left leading-relaxed">
+    By continuing, you agree to our{" "}
+    <Link
+      href="/privacy"
+      onClick={onClose}
+      className="font-medium text-primary underline underline-offset-2 hover:opacity-80 transition-opacity"
+    >
+      Privacy Policy
+    </Link>{" "}
+    and{" "}
+    <Link
+      href="/terms"
+      onClick={onClose}
+      className="font-medium text-primary underline underline-offset-2 hover:opacity-80 transition-opacity"
+    >
+      User Agreement
+    </Link>
+    .
+  </p>
+
+  <Button
+    onClick={onClose}
+    className="group font-medium shadow-md transition-all hover:shadow-primary/25 shrink-0 w-full sm:w-auto"
+  >
+    <span>Understood</span>
+    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+  </Button>
+</div>
+```
+
+### 6.5 High-Contrast Domain Badges and Enlarged Dismiss Controls
+
+- **What was added**:
+  Enhanced the domain pills in `app/(pages)/explore-departments/page.jsx` and `components/DepartmentDetailModal.jsx` using high-opacity primary tokens (`bg-primary/20 text-primary border-primary/40 font-semibold`). In addition, upgraded dialog and toast dismiss controls in `components/ui/dialog.jsx` and `components/ui/toast.jsx` with enlarged circular backgrounds and 20px close cross icons (`h-5 w-5`).
+- **Why it was added**:
+  To maintain WCAG AA contrast against varied background card gradients in both light and dark themes, while increasing the clickable touch target of modal close buttons for improved usability on desktop and mobile devices.
+
+File: `app/(pages)/explore-departments/page.jsx`
+```jsx
+<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/20 text-primary border border-primary/40 shadow-sm backdrop-blur-sm">
+  <Sparkles className="w-3.5 h-3.5 text-primary" />
+  {dept.domain}
+</span>
+```
+
+File: `components/ui/dialog.jsx`
+```jsx
+<DialogPrimitive.Close className="absolute right-3 top-3 sm:right-5 sm:top-5 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 hover:bg-background border border-border/80 text-foreground shadow-md backdrop-blur-md transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+  <X className="h-5 w-5" />
+  <span className="sr-only">Close</span>
+</DialogPrimitive.Close>
+```
+
+### 6.6 Multi-Format Department Route Resolver
+
+- **What was added**:
+  Enhanced the dynamic route handler in `app/(pages)/join/[...joinIds]/page.jsx` to resolve both normalized human-readable department slugs (e.g., `/join/management`, `/join/web-dev`, `/join/ai-ml`) and numerical identifiers (e.g., `/join/dept-1`).
+- **Why it was added**:
+  To provide clean, memorable, and shareable URLs for promotional campaigns across college student channels while maintaining backwards compatibility with legacy department links.
+
+File: `app/(pages)/join/[...joinIds]/page.jsx`
+```javascript
+const cleanSlug = rawId.toLowerCase().trim().replace(/^dept-/, "");
+const found = DEPARTMENTS_DATA.find((d) => {
+  const dId = String(d.id || "").toLowerCase();
+  const dNameSlug = (d.name || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return dId === rawId || dId === cleanSlug || dNameSlug === cleanSlug;
+});
+```
+
+### 6.7 Optimized Sign-Out Transition Duration
+
+- **What was added**:
+  Configured explicit toast duration and redirection timing on `app/auth/signout/page.jsx` to conclude the sign-out process in under 1.5 seconds.
+- **Why it was added**:
+  To reduce unnecessary wait times and provide an immediate, seamless transition back to the public portal upon signing out.
+
+File: `app/auth/signout/page.jsx`
+```jsx
+await authClient.signOut();
+toast.success("Signed out successfully", { duration: 900, dismissible: true });
+router.push("/");
+```
+

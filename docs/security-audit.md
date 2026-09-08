@@ -83,7 +83,7 @@ All 30 documented security vulnerabilities and defense-in-depth vectors have bee
   ```
   `AdminContent` is marked `"use client"`. While `AdminContent` checks `session.user.role === "admin"` in client state to conditionally render an "Access Denied" dialog, **all props passed from Server Components to Client Components are embedded in the initial HTTP response HTML stream** (as JSON serialized inside RSC `<script>` tags).
   
-  **Exploitation:** Any anonymous visitor running `curl http://localhost:3000/admin` or selecting "View Page Source" receives the entire candidate database—including personal phone numbers, email addresses, registration numbers, full names, and questionnaire answers—without authenticating.
+  **Exploitation:** Any anonymous visitor running `curl http://localhost:3000/admin` or selecting "View Page Source" receives the entire candidate database - including personal phone numbers, email addresses, registration numbers, full names, and questionnaire answers - without authenticating.
 * **Defensive Fix:**
   Perform server-side authentication and role verification before querying the database or rendering client components:
   ```javascript
