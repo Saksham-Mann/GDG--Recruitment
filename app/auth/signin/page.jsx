@@ -54,13 +54,13 @@ function SignInContent() {
   const initialMode =
     queryMode === "verify"
       ? "verify"
-      : queryMode === "signup" || queryTab === "signup"
-      ? "signup"
-      : "signin";
+      : queryMode === "login" || queryMode === "signin" || queryTab === "login" || queryTab === "signin"
+      ? "login"
+      : "signup";
 
   const { data: session, isPending } = authClient.useSession();
 
-  const [mode, setMode] = useState(initialMode); // "signin" | "signup" | "verify"
+  const [mode, setMode] = useState(initialMode); // "signup" | "login" | "verify"
   const [name, setName] = useState("");
   const [email, setEmail] = useState(queryEmail);
   const [password, setPassword] = useState("");
@@ -81,21 +81,43 @@ function SignInContent() {
   const [countdown, setCountdown] = useState(600); // 10 minutes in seconds
   const [resendCooldown, setResendCooldown] = useState(60); // 60 seconds cooldown
   const [attemptsRemaining, setAttemptsRemaining] = useState(3);
+  const [isDevMode, setIsDevMode] = useState(false);
 
   // Sync mode if URL query parameter changes
   useEffect(() => {
     if (queryMode === "verify") {
       setMode("verify");
-      if (queryEmail) setPendingEmail(queryEmail);
+      if (queryEmail) {
+        setPendingEmail(queryEmail.trim().toLowerCase());
+      }
+    } else if (queryMode === "login" || queryMode === "signin" || queryTab === "login" || queryTab === "signin") {
+      setMode("login");
     } else if (queryMode === "signup" || queryTab === "signup") {
       setMode("signup");
-    } else if (queryMode === "signin" || queryTab === "signin") {
-      setMode("signin");
     }
     setFieldErrors({});
     setAuthError("");
     setGoogleLoading(false);
   }, [queryMode, queryTab, queryEmail]);
+
+  useEffect(() => {
+    const handlePageShow = () => {
+      setGoogleLoading(false);
+      setSubmitting(false);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setGoogleLoading(false);
+        setSubmitting(false);
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   // Handle OAuth or callback error parameters in URL
   useEffect(() => {
@@ -104,7 +126,7 @@ function SignInContent() {
     if (errorParam) {
       if (errorParam === "account_not_linked") {
         setAuthError(
-          "An account with this email already exists. Please verify your credentials or sign in with your email and password."
+          "An account with this email already exists. Please verify your credentials or log in with your email and password."
         );
       } else {
         setAuthError(
@@ -217,78 +239,51 @@ function SignInContent() {
         });
 
         if (res?.error) {
+          const isExistingUser =
+            res.error.message?.toLowerCase().includes("already exists") ||
+            res.error.code === "USER_ALREADY_EXISTS";
           setAuthError(
-            res.error.message ||
-              "An account with this email may already exist. Please sign in instead."
+            isExistingUser
+              ? "An account with this email already exists. Sign Up is strictly for creating new accounts. Please switch to the Log In tab to access your account."
+              : res.error.message || "Unable to create account. Please verify your details and try again."
           );
         } else {
-          // Manual signup successful - user is unverified and session is not established.
-          // Send OTP and transition to in-app verification screen.
+          toast.success("Account created successfully! Welcome to GDG Recruitment.");
+          window.location.href = "/";
+        }
+      } else {
+        // mode === "login" -> Manual Login with Email & Password
+        // Enforce 6-digit OTP verification code requirement
+        const res = await fetch("/api/auth/login-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            password,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          setAuthError(
+            data.error ||
+              "Authentication Failed: Invalid email or password. Please verify your credentials or sign up."
+          );
+        } else {
           setPendingEmail(normalizedEmail);
           setPendingPassword(password);
           setMode("verify");
-          setCountdown(600);
-          setResendCooldown(60);
+          setCountdown(data.expiresIn || 600);
+          setResendCooldown(data.resendCooldown || 60);
           setAttemptsRemaining(3);
           setOtpCode("");
           setOtpError("");
-          toast.success("Verification code dispatched to your email address.");
-
-          // Proactively ensure OTP record is generated
-          try {
-            await fetch("/api/auth/otp/send", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email: normalizedEmail }),
-            });
-          } catch {
-            // Handled gracefully by server-side lifecycle
-          }
-        }
-      } else {
-        const res = await authClient.signIn.email({
-          email: normalizedEmail,
-          password,
-          callbackURL: "/",
-        });
-
-        if (res?.error) {
-          const errorMsg = res.error.message || "";
-          const errorCode = res.error.code || "";
-
-          if (
-            errorCode === "EMAIL_NOT_VERIFIED" ||
-            errorMsg.toLowerCase().includes("not verified")
-          ) {
-            // Unverified account trying to sign in: redirect to OTP verification
-            setPendingEmail(normalizedEmail);
-            setPendingPassword(password);
-            setMode("verify");
-            setCountdown(600);
-            setResendCooldown(60);
-            setAttemptsRemaining(3);
-            setOtpCode("");
-            setOtpError(
-              "Your account email has not been verified yet. Enter the 6-digit code sent to your email."
-            );
-
-            // Send fresh OTP
-            try {
-              await fetch("/api/auth/otp/send", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: normalizedEmail }),
-              });
-            } catch {
-              // Graceful degradation
-            }
-          } else {
-            setAuthError(
-              "Authentication Failed: The email or password entered does not match existing records. Please verify your credentials or click 'Create Account'."
-            );
-          }
-        } else {
-          router.push("/");
+          if (data.devMode) setIsDevMode(true);
+          if (data.devOtp) setOtpCode(data.devOtp);
+          toast.success(
+            data.message || "A 6-digit verification code has been sent to your email."
+          );
         }
       }
     } catch (err) {
@@ -339,9 +334,9 @@ function SignInContent() {
         return;
       }
 
-      toast.success("Email verified successfully! Logging you in...");
+      toast.success("Verification successful! Logging you in...");
 
-      // Automatically complete login session if password was provided during signup/signin
+      // Automatically complete login session with verified credentials
       if (pendingPassword) {
         const loginRes = await authClient.signIn.email({
           email: pendingEmail,
@@ -350,17 +345,21 @@ function SignInContent() {
         });
 
         if (!loginRes?.error) {
-          router.push("/");
+          window.location.href = "/";
+          return;
+        } else {
+          setOtpError(loginRes.error.message || "Failed to establish session. Please try logging in again.");
+          setOtpLoading(false);
           return;
         }
       }
 
-      // If no stored password, transition to standard sign-in
-      setMode("signin");
+      // If no stored password in state, transition to login tab
+      setMode("login");
       setEmail(pendingEmail);
       setPassword("");
       setAuthError("");
-      toast.success("Account activated! Please sign in with your password.");
+      toast.success("Account verified! Please log in with your password.");
     } catch (err) {
       console.error("OTP verification network error:", err);
       setOtpError("Network error while validating verification code. Please try again.");
@@ -387,11 +386,12 @@ function SignInContent() {
       if (!res.ok) {
         setOtpError(data.error || "Failed to resend verification code.");
       } else {
+        if (data.devMode) setIsDevMode(true);
+        if (data.devOtp) setOtpCode(data.devOtp);
         toast.success("A fresh 6-digit verification code has been dispatched.");
         setResendCooldown(60);
         setCountdown(600);
         setAttemptsRemaining(3);
-        setOtpCode("");
       }
     } catch (err) {
       console.error("OTP resend network error:", err);
@@ -404,13 +404,18 @@ function SignInContent() {
   const handleGoogleSignIn = async () => {
     setAuthError("");
     setGoogleLoading(true);
+    const safetyTimer = setTimeout(() => {
+      setGoogleLoading(false);
+    }, 4000);
+
     try {
       const res = await authClient.signIn.social({
         provider: "google",
         callbackURL: searchParams.get("callbackUrl") || "/",
-        errorCallbackURL: "/auth/signin",
+        errorCallbackURL: `/auth/signin?mode=${mode}`,
       });
       if (res?.error) {
+        clearTimeout(safetyTimer);
         setAuthError(
           res.error.message ||
             "Google Sign-In failed. Please verify that GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured in .env.local."
@@ -418,6 +423,7 @@ function SignInContent() {
         setGoogleLoading(false);
       }
     } catch (err) {
+      clearTimeout(safetyTimer);
       console.error("Google sign-in error:", err);
       setAuthError(
         "Google Sign-In is not enabled yet. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your .env.local file."
@@ -458,28 +464,30 @@ function SignInContent() {
         <div className="pointer-events-none absolute -top-40 right-1/4 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 left-1/4 -z-10 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
 
-        <div className="w-full max-w-md space-y-6 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none">
+        <div className={cn("w-full space-y-6 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none", mode === "verify" ? "max-w-lg" : "max-w-md")}>
           {mode === "verify" ? (
             /* ========================================================================= */
             /* IN-APP 6-DIGIT OTP ENTRY SCREEN */
             /* ========================================================================= */
-            <Card className="border-border/60 bg-card/80 backdrop-blur-md shadow-xl rounded-2xl">
-              <CardHeader className="space-y-2 text-center pb-4">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm mb-1">
-                  <ShieldCheck className="h-6 w-6" />
+            <Card className="border-border/60 bg-card/85 backdrop-blur-md shadow-2xl rounded-3xl overflow-hidden">
+              <CardHeader className="space-y-4 text-center pt-8 pb-6 px-6 sm:px-10 border-b border-border/30 bg-muted/10">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm mb-1">
+                  <ShieldCheck className="h-7 w-7" />
                 </div>
-                <CardTitle className={`text-2xl font-bold tracking-tight text-foreground ${spaceGrotesk.className}`}>
-                  Verify Your Email
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm text-muted-foreground">
-                  We sent a 6-digit verification code to{" "}
-                  <span className="font-semibold text-foreground break-all">{pendingEmail}</span>. Enter the code below
-                  to activate your account.
-                </CardDescription>
+                <div className="space-y-2">
+                  <CardTitle className={`text-2xl sm:text-3xl font-bold tracking-tight text-foreground ${spaceGrotesk.className}`}>
+                    Verify Your Identity
+                  </CardTitle>
+                  <CardDescription className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                    We sent a 6-digit verification code to{" "}
+                    <span className="font-semibold text-foreground break-all">{pendingEmail}</span>. Enter the code below
+                    to complete your log in.
+                  </CardDescription>
+                </div>
 
                 {/* Expiration and Security Badges */}
-                <div className="flex items-center justify-center gap-2 pt-2 text-xs">
-                  <div className="flex items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1 text-muted-foreground border border-border/40">
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs">
+                  <div className="flex items-center gap-1.5 rounded-full bg-muted/70 px-3.5 py-1.5 text-muted-foreground border border-border/40 shadow-2xs">
                     <Clock className="h-3.5 w-3.5 text-primary" />
                     <span>
                       Expires in:{" "}
@@ -488,7 +496,7 @@ function SignInContent() {
                       </span>
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1 text-muted-foreground border border-border/40">
+                  <div className="flex items-center gap-1.5 rounded-full bg-muted/70 px-3.5 py-1.5 text-muted-foreground border border-border/40 shadow-2xs">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                     <span>
                       Attempts left:{" "}
@@ -499,12 +507,12 @@ function SignInContent() {
               </CardHeader>
 
               <form onSubmit={handleVerifyOtp} noValidate>
-                <CardContent className="space-y-4 pt-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="otp-input" className="text-xs font-medium text-foreground text-center block">
+                <CardContent className="space-y-6 pt-6 pb-2 px-6 sm:px-10">
+                  <div className="space-y-3">
+                    <Label htmlFor="otp-input" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center block">
                       6-Digit Verification Code
                     </Label>
-                    <div className="flex justify-center">
+                    <div className="flex justify-center py-1">
                       <Input
                         id="otp-input"
                         type="text"
@@ -520,18 +528,24 @@ function SignInContent() {
                           setOtpCode(val);
                           setOtpError("");
                         }}
-                        className="h-14 w-60 rounded-xl border border-border/80 bg-background/80 text-center font-mono text-2xl font-bold tracking-[0.5em] shadow-inner focus-visible:ring-primary"
+                        className="h-16 w-64 rounded-2xl border-2 border-border/80 bg-background/90 text-center font-mono text-3xl font-bold tracking-[0.55em] shadow-inner focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all"
                         aria-label="6-digit verification code"
                         aria-invalid={!!otpError}
                       />
                     </div>
                   </div>
 
+                  {isDevMode && (
+                    <div className="w-full rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-600 dark:text-amber-400">
+                      <span className="font-semibold">Development Mode:</span> Email SMTP credentials (<code className="font-mono">EMAIL_USERNAME</code> / <code className="font-mono">EMAIL_PASSWORD</code>) are not configured in <code className="font-mono">.env.local</code>. The verification code has been auto-filled and printed to your terminal.
+                    </div>
+                  )}
+
                   {otpError && (
                     <div
                       role="alert"
                       aria-live="assertive"
-                      className="w-full flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-medium text-red-500 animate-in fade-in-0 duration-200"
+                      className="w-full flex items-center gap-2.5 rounded-2xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs font-medium text-red-500 animate-in fade-in-0 duration-200"
                     >
                       <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
                       <span>{otpError}</span>
@@ -539,7 +553,7 @@ function SignInContent() {
                   )}
 
                   {/* Resend OTP Bar */}
-                  <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3 border border-border/30 text-xs">
+                  <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-4 border border-border/40 text-xs">
                     <span className="text-muted-foreground">Did not receive the code?</span>
                     <Button
                       type="button"
@@ -547,7 +561,7 @@ function SignInContent() {
                       size="sm"
                       disabled={resendCooldown > 0 || resendLoading}
                       onClick={handleResendOtp}
-                      className="h-8 px-2.5 text-xs font-semibold text-primary hover:text-primary hover:bg-primary/10"
+                      className="h-8 px-3 text-xs font-semibold text-primary hover:text-primary hover:bg-primary/10 rounded-xl"
                     >
                       {resendLoading ? (
                         <div className="flex items-center gap-1.5">
@@ -557,7 +571,7 @@ function SignInContent() {
                       ) : resendCooldown > 0 ? (
                         <span>Resend in {resendCooldown}s</span>
                       ) : (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <RefreshCw className="h-3.5 w-3.5" />
                           <span>Resend OTP</span>
                         </div>
@@ -566,40 +580,44 @@ function SignInContent() {
                   </div>
                 </CardContent>
 
-                <CardFooter className="flex flex-col gap-3 pt-2">
+                <CardFooter className="flex flex-col gap-4 pt-4 pb-8 px-6 sm:px-10">
                   <Button
                     type="submit"
                     disabled={otpLoading || otpCode.length !== 6 || countdown === 0}
-                    className="w-full rounded-xl h-11 font-semibold shadow-md transition-all hover:shadow-primary/20"
+                    className="w-full rounded-2xl h-12 text-base font-semibold shadow-md transition-all hover:shadow-primary/25 active:scale-[0.99]"
                   >
                     {otpLoading ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Verifying Account...</span>
+                        <span>Verifying Code...</span>
                       </div>
                     ) : (
-                      "Verify & Activate Account"
+                      "Verify & Continue"
                     )}
                   </Button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode("signup");
-                      setOtpError("");
-                      setAuthError("");
-                    }}
-                    className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>Change Email Address</span>
-                  </button>
+                  <div className="flex flex-col items-center gap-2 pt-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("login");
+                        setOtpError("");
+                        setAuthError("");
+                        setOtpCode("");
+                        setPendingPassword("");
+                      }}
+                      className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors p-1"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Use a different email address</span>
+                    </button>
+                  </div>
                 </CardFooter>
               </form>
             </Card>
           ) : (
             /* ========================================================================= */
-            /* CREDENTIAL SIGN-IN / SIGN-UP FORM */
+            /* CREDENTIAL SIGN-UP / LOG-IN FORM */
             /* ========================================================================= */
             <Card className="border-border/60 bg-card/80 backdrop-blur-md shadow-xl rounded-2xl">
               <CardHeader className="space-y-1 text-center pb-6">
@@ -607,38 +625,27 @@ function SignInContent() {
                   <Sparkles className="h-6 w-6" />
                 </div>
                 <CardTitle className={`text-2xl font-bold tracking-tight text-foreground ${spaceGrotesk.className}`}>
-                  {mode === "signin" ? "Sign In" : "Create Account"}
+                  {mode === "signup" ? "Sign Up" : "Log In"}
                 </CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
-                  {mode === "signin"
-                    ? "Sign in with Google or enter your credentials"
-                    : "Create an account or sign up instantly with Google"}
+                  {mode === "signup"
+                    ? "Create an account or sign up instantly with Google"
+                    : "Log in with Google or enter your credentials"}
                 </CardDescription>
 
-                {/* Mode Toggle Switcher */}
                 <div className="pt-4">
                   <div className="grid grid-cols-2 rounded-xl bg-muted/60 p-1 border border-border/40">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMode("signin");
-                        setFieldErrors({});
-                        setAuthError("");
-                      }}
-                      className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
-                        mode === "signin"
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Sign In
-                    </button>
                     <button
                       type="button"
                       onClick={() => {
                         setMode("signup");
                         setFieldErrors({});
                         setAuthError("");
+                        if (typeof window !== "undefined") {
+                          const url = new URL(window.location.href);
+                          url.searchParams.set("mode", "signup");
+                          window.history.replaceState(null, "", url.toString());
+                        }
                       }}
                       className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
                         mode === "signup"
@@ -646,7 +653,27 @@ function SignInContent() {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      Create Account
+                      Sign Up
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("login");
+                        setFieldErrors({});
+                        setAuthError("");
+                        if (typeof window !== "undefined") {
+                          const url = new URL(window.location.href);
+                          url.searchParams.set("mode", "login");
+                          window.history.replaceState(null, "", url.toString());
+                        }
+                      }}
+                      className={`rounded-lg py-1.5 text-xs font-semibold transition-all ${
+                        mode === "login"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Log In
                     </button>
                   </div>
                 </div>
@@ -685,7 +712,7 @@ function SignInContent() {
                         />
                       </svg>
                     )}
-                    <span>{mode === "signin" ? "Sign in with Google" : "Sign up with Google"}</span>
+                    <span>{mode === "signup" ? "Sign up with Google" : "Log in with Google"}</span>
                   </Button>
 
                   {/* Divider */}
@@ -839,10 +866,26 @@ function SignInContent() {
                     <div
                       role="alert"
                       aria-live="assertive"
-                      className="w-full flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-medium text-red-500 animate-in fade-in-0 duration-200"
+                      className="w-full flex flex-col gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-medium text-red-500 animate-in fade-in-0 duration-200"
                     >
-                      <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
-                      <span>{authError}</span>
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+                        <span className="leading-snug">{authError}</span>
+                      </div>
+                      {mode === "signup" &&
+                        authError.toLowerCase().includes("already exists") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMode("login");
+                              setAuthError("");
+                              setFieldErrors({});
+                            }}
+                            className="self-start text-[11px] font-semibold text-primary underline underline-offset-2 hover:opacity-80 transition-opacity ml-6"
+                          >
+                            Switch to Log In tab &rarr;
+                          </button>
+                        )}
                     </div>
                   )}
                   <Button
@@ -855,10 +898,10 @@ function SignInContent() {
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span>Processing...</span>
                       </div>
-                    ) : mode === "signin" ? (
-                      "Sign In with Email"
+                    ) : mode === "signup" ? (
+                      "Sign Up with Email"
                     ) : (
-                      "Create Account with Email"
+                      "Log In with Email"
                     )}
                   </Button>
 

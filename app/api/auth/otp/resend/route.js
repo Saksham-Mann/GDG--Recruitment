@@ -41,9 +41,12 @@ export async function POST(req) {
     const { email } = parseResult.data;
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Verify user exists and is not already verified
     const db = await connect();
-    const userSnap = await db.collection("user").where("email", "==", normalizedEmail).get();
+    let userSnap = await db.collection("users").where("email", "==", normalizedEmail).get();
+    if (userSnap.empty) {
+      userSnap = await db.collection("user").where("email", "==", normalizedEmail).get();
+    }
+
     if (userSnap.empty) {
       return NextResponse.json(
         { error: "No account found with this email address." },
@@ -76,9 +79,13 @@ export async function POST(req) {
 
     return NextResponse.json(
       {
-        message: "A fresh verification code has been sent to your email.",
+        message: result.devMode
+          ? "A fresh verification code generated in development mode."
+          : "A fresh verification code has been sent to your email.",
         expiresIn: result.expiresIn,
         resendCooldown: result.resendCooldown,
+        devMode: result.devMode,
+        devOtp: result.devOtp,
       },
       { status: 200 }
     );

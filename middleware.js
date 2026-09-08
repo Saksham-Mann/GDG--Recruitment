@@ -17,6 +17,7 @@ export function middleware(request) {
   const loginAliases = ["/login", "/auth/login"];
   if (loginAliases.includes(lowerPath)) {
     const loginUrl = new URL("/auth/signin", request.url);
+    loginUrl.searchParams.set("mode", "login");
     return NextResponse.redirect(loginUrl);
   }
 

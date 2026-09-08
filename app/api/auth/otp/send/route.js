@@ -52,9 +52,12 @@ export async function POST(req) {
       );
     }
 
-    // Verify user exists
     const db = await connect();
-    const userSnap = await db.collection("user").where("email", "==", normalizedEmail).get();
+    let userSnap = await db.collection("users").where("email", "==", normalizedEmail).get();
+    if (userSnap.empty) {
+      userSnap = await db.collection("user").where("email", "==", normalizedEmail).get();
+    }
+
     if (userSnap.empty) {
       return NextResponse.json(
         { error: "No account found with this email address. Please create an account first." },
@@ -87,9 +90,13 @@ export async function POST(req) {
 
     return NextResponse.json(
       {
-        message: "Verification code sent to your email address.",
+        message: result.devMode
+          ? "Verification code generated in development mode."
+          : "Verification code sent to your email address.",
         expiresIn: result.expiresIn,
         resendCooldown: result.resendCooldown,
+        devMode: result.devMode,
+        devOtp: result.devOtp,
       },
       { status: 200 }
     );

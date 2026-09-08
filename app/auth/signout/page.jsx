@@ -31,11 +31,11 @@ export default function SignOutPage() {
           }
         }
         await authClient.signOut();
-        toast.success("Signed out successfully");
+        toast.success("Signed out successfully", { duration: 900, dismissible: true });
         router.push("/");
       } catch (error) {
         console.error("Sign out error:", error);
-        toast.error("Failed to sign out");
+        toast.error("Failed to sign out", { duration: 2000 });
         router.push("/");
       }
     };
