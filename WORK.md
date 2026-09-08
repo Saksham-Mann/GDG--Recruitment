@@ -113,22 +113,22 @@ All 30 vulnerabilities have been fully remediated and verified. The full audit r
 
 ## Section 3: Branching Strategy and Version Control
 
-### 3.1 Branch Layout and Naming Conventions
-To maintain a clean audit trail and demonstrate project evolution across distinct technical milestones, the repository follows a structured, phase-oriented branching taxonomy:
+### 3.1 Architecture Milestone Phases and Version Control Structure
+To maintain a clean audit trail and document project evolution across distinct technical milestones without fragmenting the physical git repository into redundant branches, the development lifecycle was organized into four core engineering phases leading directly into the integrated production branch:
 
 ```
 [original-ui-ux] (Baseline reference state)
        │
-       ├─► [fix/ui-ux-recovery]
+       ├─► Phase 1: fix/ui-ux-recovery
        │         │ (UI styling token recovery, CSS loop bypass, skeletons, inline validation)
        │         │
-       ├─► [security/vulnerability-hardening]
+       ├─► Phase 2: security/vulnerability-hardening
        │         │ (P0-P3 audit remediation, IDOR, SSRF, race conditions, CSP, Gitleaks)
        │         │
-       ├─► [feat/backend-storage-architecture]
+       ├─► Phase 3: feat/backend-storage-architecture
        │         │ (Hidden storage failure diagnosis, atomic transaction writes, cost optimizations)
        │         │
-       └─► [feat/enhanced-experience]
+       └─► Phase 4: feat/enhanced-experience
                  │ (Explore vs Apply decoupling, 3-tier admin dossier, 6-digit OTP verification, legal)
                  │
                  ▼
@@ -137,16 +137,16 @@ To maintain a clean audit trail and demonstrate project evolution across distinc
 
 1. **`original-ui-ux`**:
    - The initial repository snapshot preserving early defects, broken styling, performance-freezing loops, and missing security perimeters for regression benchmarking.
-2. **`fix/ui-ux-recovery`**:
+2. **Phase 1: `fix/ui-ux-recovery`**:
    - Compartmentalizes all frontend stability patches: Tailwind color tokens, `globals.css` HSL variables, removal of synchronous loops in `Card.jsx` and `AllDepartments.jsx`, hydration safety, and transition from alert popups to real-time inline field validation.
-3. **`security/vulnerability-hardening`**:
+3. **Phase 2: `security/vulnerability-hardening`**:
    - Houses the complete 30-vulnerability security remediation suite: role-based access control (RBAC), IDOR prevention, atomic transaction concurrency locks, Next.js security middleware, CSP headers, rate-limiting, and `.gitleaks.toml` secret scanning.
-4. **`feat/backend-storage-architecture`**:
+4. **Phase 3: `feat/backend-storage-architecture`**:
    - Focuses on backend persistence correctness: diagnosis and repair of the silent response storage bug, normalized schema storage for department-specific questions, read/write deduplication, and connection pooling.
-5. **`feat/enhanced-experience`**:
+5. **Phase 4: `feat/enhanced-experience`**:
    - Encapsulates candidate and administrative feature expansions: click-to-view department exploration, sticky contextual navigation, administrative 3-tier status triage (Waitlist, Shortlist, Reject) with direct row review, 6-digit OTP email verification, and `/privacy` and `/terms` compliance routes.
-6. **`main` (Active Production Branch `updated-ui-ux`)**:
-   - Represents the fully integrated, production-ready codebase passing all unit tests, security scans, and `npm run build` verification with zero warnings.
+6. **Integrated Production Branch (`updated-ui-ux` / `main`)**:
+   - Represents the fully integrated, production-ready codebase passing all unit tests, security scans, and `npm run build` verification with zero warnings. Keeping these phases integrated on the primary working branch ensures full cohesion without merge drift or branch proliferation.
 
 ### 3.2 Migration and Merge History
 - Incremental cherry-picking and clean rebase-merging ensured that each phase was validated independently prior to consolidation.
