@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 
-const CountdownTimer = ({ targetDate = "2026-08-23T23:59:59+05:30", className = "" }) => {
+const CountdownTimer = ({ targetDate = "2026-12-31T23:59:59+05:30", className = "" }) => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -38,37 +38,24 @@ const CountdownTimer = ({ targetDate = "2026-08-23T23:59:59+05:30", className = 
     return () => clearInterval(timer);
   }, [targetDate]);
 
-  const TimeUnit = ({ value, label }) => (
-    <div className="flex flex-col items-center">
-      <div className="relative">
-        <div className=" ">
-          <div className="font-bold text-white tracking-wider">
-            {value.toString().padStart(2, "0")}
-          </div>
-        </div>
-      </div>
-      <div className="text-gray-400 text-[10px] uppercase tracking-wide">
-        {label}
-      </div>
-    </div>
-  );
-
   return (
-    <div className={`flex flex-col items-center justify-center ${className}`}>
-      <div className="flex gap-3">
-        <TimeUnit value={timeLeft.days} label="Days" />
-        <div className="flex items-center text-2xl text-gray-500 font-bold">
-          :
-        </div>
-        <TimeUnit value={timeLeft.hours} label="Hours" />
-        <div className="flex items-center text-2xl text-gray-500 font-bold">
-          :
-        </div>
-        <TimeUnit value={timeLeft.minutes} label="Minutes" />
-        <div className="flex items-center text-2xl text-gray-500 font-bold">
-          :
-        </div>
-        <TimeUnit value={timeLeft.seconds} label="Seconds" />
+    <div className={`flex items-center justify-center gap-6 sm:gap-8 select-none pointer-events-none ${className}`}>
+      {/* Column 1: Days */}
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-none">Days</span>
+        <span className="font-mono text-xl sm:text-3xl font-bold text-foreground mt-1.5 leading-none">{timeLeft.days}</span>
+      </div>
+
+      {/* Column 2: Hours */}
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-none">Hours</span>
+        <span className="font-mono text-xl sm:text-3xl font-bold text-foreground mt-1.5 leading-none">{timeLeft.hours.toString().padStart(2, "0")}</span>
+      </div>
+
+      {/* Column 3: Minutes */}
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-none">Minutes</span>
+        <span className="font-mono text-xl sm:text-3xl font-bold text-foreground mt-1.5 leading-none">{timeLeft.minutes.toString().padStart(2, "0")}</span>
       </div>
     </div>
   );

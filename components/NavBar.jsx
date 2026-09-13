@@ -9,6 +9,7 @@ import { Button } from "./ui/button";
 import { authClient } from "@/lib/auth-client";
 import { Loader2, Clock, ShieldCheck, Menu, X, ChevronRight, Home, Layers, Compass } from "lucide-react";
 import { DM_Sans } from "next/font/google";
+import ShineBorder from "@/components/magicui/shine-border";
 
 const dm_sans = DM_Sans({ weight: ["400", "500", "700"], subsets: ["latin"] });
 
@@ -21,16 +22,35 @@ const NavBar = () => {
   const [navigationRouteList, setNavigationRouteList] = useState([]);
   const [scrolled, setScrolled] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setFormattedTimeDisplay(
-        new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-      );
-    }, 1000);
-    setFormattedTimeDisplay(
-      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-    );
+    const computeTimeLeft = () => {
+      // Recruitment ends on 31 December 2026, 23:59:59
+      const target = new Date("2026-12-31T23:59:59").getTime();
+      const now = new Date().getTime();
+      const difference = target - now;
+
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0 };
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+
+      return { days, hours, minutes };
+    };
+
+    const updateTimer = () => {
+      const res = computeTimeLeft();
+      setTimeLeft(res);
+      setFormattedTimeDisplay(`${res.days}d ${res.hours}h ${res.minutes}m`);
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+
     return () => clearInterval(timer);
   }, []);
 
@@ -83,11 +103,17 @@ const NavBar = () => {
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo & Name */}
         <Link href="/" className="group flex items-center gap-3 transition-transform hover:scale-[1.02]">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-500 p-[1px] shadow-md shadow-blue-500/10">
-            <div className="flex h-full w-full items-center justify-center rounded-[11px] bg-background">
+          <ShineBorder
+            borderRadius={14}
+            borderWidth={2.5}
+            duration={9}
+            color={["#4285F4", "#EA4335", "#FBBC05", "#34A853"]}
+            className="shadow-[0_0_16px_rgba(66,133,244,0.45),0_0_4px_rgba(66,133,244,0.6)]"
+          >
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-[11px] bg-background/90 backdrop-blur-sm">
               <Image src="/assets/gdg.svg" alt="GDG Logo" width={24} height={24} className="transition-transform group-hover:rotate-12" priority />
             </div>
-          </div>
+          </ShineBorder>
           <div className="flex flex-col">
             <span className={`text-base font-bold tracking-tight text-foreground ${dm_sans.className}`}>
               GDG Recruitment
@@ -120,10 +146,25 @@ const NavBar = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2.5">
-          {formattedTimeDisplay && (
-            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
-              <Clock className="h-3.5 w-3.5 text-primary/70" />
-              <span className="font-mono text-[11px]">{formattedTimeDisplay}</span>
+          {timeLeft && (
+            <div
+              className="hidden lg:flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-1 text-xs select-none pointer-events-none"
+            >
+              <Clock className="h-4 w-4 text-primary/80 shrink-0" />
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider leading-none">Days</span>
+                  <span className="font-mono text-[11px] font-bold text-foreground mt-1 leading-none">{timeLeft.days}</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider leading-none">Hours</span>
+                  <span className="font-mono text-[11px] font-bold text-foreground mt-1 leading-none">{timeLeft.hours.toString().padStart(2, "0")}</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider leading-none">Minutes</span>
+                  <span className="font-mono text-[11px] font-bold text-foreground mt-1 leading-none">{timeLeft.minutes.toString().padStart(2, "0")}</span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -169,6 +210,28 @@ const NavBar = () => {
       {mobileDrawerOpen && (
         <div className="md:hidden border-b border-border/60 bg-background/95 backdrop-blur-xl px-4 py-4 shadow-xl animate-in slide-in-from-top duration-200">
           <nav className="flex flex-col gap-2">
+            {timeLeft && (
+              <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/50 bg-muted/30 text-xs text-muted-foreground mb-1">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-foreground">Recruitment Ends</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider leading-none">Days</span>
+                    <span className="font-mono text-xs font-bold text-foreground mt-1 leading-none">{timeLeft.days}</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider leading-none">Hours</span>
+                    <span className="font-mono text-xs font-bold text-foreground mt-1 leading-none">{timeLeft.hours.toString().padStart(2, "0")}</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider leading-none">Minutes</span>
+                    <span className="font-mono text-xs font-bold text-foreground mt-1 leading-none">{timeLeft.minutes.toString().padStart(2, "0")}</span>
+                  </div>
+                </div>
+              </div>
+            )}
             <Link
               href="/"
               onClick={() => setMobileDrawerOpen(false)}

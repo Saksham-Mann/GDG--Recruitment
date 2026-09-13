@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Layers, Users, Rocket, Compass } from "lucide-react";
 import { Button } from "./ui/button";
 import { Inter, Space_Grotesk } from "next/font/google";
+import { cn } from "@/lib/utils";
+import Ripple from "@/components/magicui/ripple";
+import ShineBorder from "@/components/magicui/shine-border";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "600", "700", "800"] });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
@@ -23,11 +26,28 @@ export default function Hero() {
         <div className="h-full w-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-500 [clip-path:polygon(74.1%_44.1%,100%_61.6%,97.5%_26.9%,85.5%_0.1%,80.7%_2%,72.5%_32.5%,60.2%_62.4%,52.4%_68.1%,47.5%_58.3%,45.2%_34.5%,27.5%_76.7%,0.1%_64.9%,17.9%_100%,27.6%_76.8%,76.1%_97.7%,74.1%_44.1%)]" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none">
-        {/* Live Status Badge */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary shadow-sm mb-6 transition-transform hover:scale-105">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>{headline} is Live · Applications Open</span>
+      {/* Ambient Ripple Waves */}
+      <Ripple
+        mainCircleSize={220}
+        numCircles={6}
+        className="opacity-30 dark:opacity-25 [mask-image:radial-gradient(circle_at_center,white_30%,transparent_75%)]"
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none">
+        {/* Live Status Badge with ShineBorder */}
+        <div className="mb-6 inline-flex justify-center">
+          <ShineBorder
+            borderRadius={9999}
+            borderWidth={1.5}
+            duration={8}
+            color={["#4285F4", "#EA4335", "#FBBC05", "#34A853"]}
+            className="shadow-sm transition-transform hover:scale-105"
+          >
+            <div className="inline-flex items-center gap-2 rounded-full bg-background/90 backdrop-blur-md px-4 py-1.5 text-xs font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>{headline} is Live · Applications Open</span>
+            </div>
+          </ShineBorder>
         </div>
 
         {/* Hero Headline */}
@@ -49,7 +69,7 @@ export default function Hero() {
             <Button
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto h-12 rounded-full px-8 font-semibold border-border/80 bg-background/60 hover:bg-muted/60 transition-all hover:scale-105 shadow-xs"
+              className="w-full sm:w-auto h-12 rounded-full px-8 font-semibold border-border/80 bg-background/80 hover:bg-muted/80 transition-all hover:scale-105 shadow-xs"
             >
               <Compass className="mr-2 h-4 w-4 text-primary" />
               <span>Explore Departments</span>
@@ -67,11 +87,12 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Feature Pill Highlights */}
+        {/* Feature Pill Highlights with Three Distinctly Different Icon Accent Colors */}
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto text-left">
-          <div style={{ animationDelay: "40ms" }} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 mb-4">
-              <Layers className="h-5 w-5" />
+          {/* Card 1: Diverse Domains - Google Blue */}
+          <div style={{ animationDelay: "40ms" }} className="rounded-2xl border border-border/60 bg-card/75 backdrop-blur-sm p-6 shadow-xs transition-all hover:border-blue-500/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white border border-white/20 shadow-md shadow-blue-500/30 mb-4">
+              <Layers className="h-5 w-5 stroke-[2.2] text-white" style={{ color: "#ffffff", opacity: 1 }} />
             </div>
             <h3 className="text-base font-semibold text-foreground">Diverse Domains</h3>
             <p className="mt-1.5 text-xs text-muted-foreground leading-normal">
@@ -79,9 +100,10 @@ export default function Hero() {
             </p>
           </div>
 
-          <div style={{ animationDelay: "80ms" }} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500 mb-4">
-              <Rocket className="h-5 w-5" />
+          {/* Card 2: Real-World Projects - Google Amber / Yellow */}
+          <div style={{ animationDelay: "80ms" }} className="rounded-2xl border border-border/60 bg-card/75 backdrop-blur-sm p-6 shadow-xs transition-all hover:border-amber-500/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500 text-white border border-white/20 shadow-md shadow-amber-500/30 mb-4">
+              <Rocket className="h-5 w-5 stroke-[2.2] text-white" style={{ color: "#ffffff", opacity: 1 }} />
             </div>
             <h3 className="text-base font-semibold text-foreground">Real-World Projects</h3>
             <p className="mt-1.5 text-xs text-muted-foreground leading-normal">
@@ -89,9 +111,10 @@ export default function Hero() {
             </p>
           </div>
 
-          <div style={{ animationDelay: "120ms" }} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500 mb-4">
-              <Users className="h-5 w-5" />
+          {/* Card 3: Community & Mentorship - Google Green */}
+          <div style={{ animationDelay: "120ms" }} className="rounded-2xl border border-border/60 bg-card/75 backdrop-blur-sm p-6 shadow-xs transition-all hover:border-emerald-500/40 hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white border border-white/20 shadow-md shadow-emerald-500/30 mb-4">
+              <Users className="h-5 w-5 stroke-[2.2] text-white" style={{ color: "#ffffff", opacity: 1 }} />
             </div>
             <h3 className="text-base font-semibold text-foreground">Community & Mentorship</h3>
             <p className="mt-1.5 text-xs text-muted-foreground leading-normal">

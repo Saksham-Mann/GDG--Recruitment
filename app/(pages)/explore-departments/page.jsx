@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { Space_Grotesk } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import { reviews } from "@/constants";
 import { departmentDetailsMap } from "@/constants/departmentDetails";
 import DepartmentDetailModal from "@/components/DepartmentDetailModal";
+import ShineBorder from "@/components/magicui/shine-border";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -25,34 +27,84 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["400", "500", "600", "700"],
 });
 
-export default function ExploreDepartmentsPage() {
+function ExploreDepartmentsContent() {
+  const searchParams = useSearchParams();
   const [activeModalDepartment, setActiveModalDepartment] = useState(null);
 
+  // Check URL query parameters to auto-open specific department card popup
+  useEffect(() => {
+    const requestedDept =
+      searchParams?.get("dept") ||
+      searchParams?.get("department") ||
+      searchParams?.get("id");
+
+    if (requestedDept) {
+      const decoded = decodeURIComponent(requestedDept).trim().toLowerCase();
+      const matched = reviews.find(
+        (r) =>
+          r.name.toLowerCase() === decoded ||
+          (r.id && r.id.toLowerCase() === decoded) ||
+          r.name.toLowerCase().replace(/[^a-z0-9]/g, "") === decoded.replace(/[^a-z0-9]/g, "")
+      );
+      if (matched) {
+        setActiveModalDepartment(matched);
+      }
+    }
+  }, [searchParams]);
+
+  const handleCloseModal = () => {
+    setActiveModalDepartment(null);
+    // Clean query parameters from URL without causing a full page refresh
+    if (typeof window !== "undefined" && window.history) {
+      const url = new URL(window.location.href);
+      if (
+        url.searchParams.has("dept") ||
+        url.searchParams.has("department") ||
+        url.searchParams.has("id")
+      ) {
+        url.searchParams.delete("dept");
+        url.searchParams.delete("department");
+        url.searchParams.delete("id");
+        window.history.replaceState({}, "", url.pathname);
+      }
+    }
+  };
+
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground relative">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <NavBar />
 
-      <main id="main-content" className="flex-1 pb-32 pt-8 sm:pt-14">
+      <main id="main-content" className="flex-1 pb-32 pt-10 sm:pt-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Top Breadcrumb & Return Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-8 border-b border-border/40">
+          {/* Header Section */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 sm:gap-8 pb-10 sm:pb-12 border-b border-border/40">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-medium text-primary mb-3">
-                <Compass className="h-3.5 w-3.5" />
-                <span>Informational Discovery Hub · GDG Chapters</span>
+              <div className="mb-5 sm:mb-6 inline-flex">
+                <ShineBorder
+                  borderRadius={9999}
+                  borderWidth={1.5}
+                  duration={8}
+                  color={["#4285F4", "#EA4335", "#FBBC05", "#34A853"]}
+                  className="shadow-xs transition-transform hover:scale-105"
+                >
+                  <div className="inline-flex items-center gap-2 rounded-full bg-background/90 backdrop-blur-md px-3.5 py-1.5 text-xs font-medium text-primary">
+                    <Compass className="h-3.5 w-3.5 text-primary" />
+                    <span>Informational Discovery Hub · GDG Chapters</span>
+                  </div>
+                </ShineBorder>
               </div>
               <h1
-                className={`text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground ${spaceGrotesk.className}`}
+                className={`text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-tight ${spaceGrotesk.className}`}
               >
                 Explore Our Departments
               </h1>
-              <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
+              <p className="mt-4 sm:mt-5 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
                 Take your time to browse all 12 specialized domains. Click or tap any card to view projects, tech stacks, and team culture without any premature commitment.
               </p>
             </div>
 
             {/* Quick Action to Proceed */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="mt-4 sm:mt-0 flex items-center gap-3 shrink-0">
               <Link href="/departments">
                 <Button
                   size="lg"
@@ -66,7 +118,7 @@ export default function ExploreDepartmentsPage() {
           </div>
 
           {/* Department Grid */}
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in-0 duration-200 ease-out motion-reduce:animate-none">
+          <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in-0 duration-200 ease-out motion-reduce:animate-none">
             {reviews.map((department, index) => {
               const details = departmentDetailsMap[department.name] || {};
               const IconComponent = department.icon || Layers;
@@ -106,13 +158,13 @@ export default function ExploreDepartmentsPage() {
                     {/* Top Floating Badge */}
                     <div className="absolute top-3 left-3 pointer-events-none">
                       <div
-                        className="flex h-11 w-11 items-center justify-center rounded-xl shadow-lg backdrop-blur-xl border border-white/30 bg-neutral-950/80 dark:bg-neutral-900/90"
+                        className="flex h-11 w-11 items-center justify-center rounded-xl shadow-md backdrop-blur-xl border border-white/20 text-white"
                         style={{
-                          color: toneColor || "#3b82f6",
-                          boxShadow: toneColor ? `0 4px 14px ${toneColor}40` : "0 4px 14px rgba(0,0,0,0.4)",
+                          backgroundColor: toneColor || "#3b82f6",
+                          boxShadow: toneColor ? `0 4px 14px ${toneColor}50` : "0 4px 14px rgba(0,0,0,0.2)",
                         }}
                       >
-                        <IconComponent className="h-6 w-6 stroke-[2.2] drop-shadow-md" style={{ opacity: 1 }} />
+                        <IconComponent className="h-6 w-6 stroke-[2.2] text-white drop-shadow-xs" style={{ color: "#ffffff", opacity: 1 }} />
                       </div>
                     </div>
 
@@ -200,10 +252,36 @@ export default function ExploreDepartmentsPage() {
       <DepartmentDetailModal
         department={activeModalDepartment}
         isOpen={!!activeModalDepartment}
-        onClose={() => setActiveModalDepartment(null)}
+        onClose={handleCloseModal}
       />
 
       <Footer />
     </div>
+  );
+}
+
+export default function ExploreDepartmentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-background text-foreground">
+          <NavBar />
+          <main className="flex-1 pb-32 pt-8 sm:pt-14">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="h-8 w-48 bg-muted animate-pulse rounded-lg mb-4" />
+              <div className="h-12 w-96 bg-muted animate-pulse rounded-xl mb-8" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-80 bg-muted/40 animate-pulse rounded-3xl" />
+                ))}
+              </div>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <ExploreDepartmentsContent />
+    </Suspense>
   );
 }

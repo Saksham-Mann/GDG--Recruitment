@@ -1,5 +1,6 @@
-"use client";;
+"use client";
 import React, { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 function MousePosition() {
   const [mousePosition, setMousePosition] = useState({
@@ -226,9 +227,9 @@ const Particles = ({
   };
 
   return (
-    (<div className={className} ref={canvasContainerRef} aria-hidden="true">
+    <div className={cn("pointer-events-none", className)} ref={canvasContainerRef} aria-hidden="true">
       <canvas ref={canvasRef} className="size-full" />
-    </div>)
+    </div>
   );
 };
 

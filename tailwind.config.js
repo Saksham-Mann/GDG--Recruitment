@@ -60,6 +60,15 @@ module.exports = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      animation: {
+        marquee: "marquee var(--duration) linear infinite",
+        "marquee-vertical":
+          "marquee-vertical var(--duration) linear infinite",
+        ripple:
+          "ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite",
+        gradient: "gradient 8s linear infinite",
+        "shine-pulse": "shine-pulse var(--shine-pulse-duration,14s) infinite linear",
+      },
       keyframes: {
         "shine-pulse": {
           "0%": {
@@ -84,16 +93,6 @@ module.exports = {
           },
           to: { height: "0" },
         },
-      },
-      animation: {
-        marquee: "marquee var(--duration) linear infinite",
-        "marquee-vertical":
-          "marquee-vertical var(--duration) linear infinite",
-        ripple:
-          "ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite",
-        gradient: "gradient 8s linear infinite",
-      },
-      keyframes: {
         ripple: {
           "0%, 100%": {
             transform: "translate(-50%, -50%) scale(1)",

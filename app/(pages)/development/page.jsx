@@ -11,7 +11,7 @@ const features = [
   {
     name: "App Dev",
     icon: Smartphone,
-    color: "#6EE7A0",
+    color: "#059669",
     description:
       "Builds intuitive, impactful mobile applications, improving accessibility, interaction, and convenience for members and event participants through functional, user-focused design.",
     href: "/join/339f0f8a-72f2-44b9-92ab-2b0d4dcfa0f6",
@@ -20,7 +20,7 @@ const features = [
   {
     name: "Web Dev",
     icon: Globe,
-    color: "#8AB4F8",
+    color: "#0891b2",
     description:
       "Designs, develops, and maintains responsive, high-performance websites for projects and events, using modern web technologies to enhance accessibility, user experience, and community engagement online.",
     href: "/join/8143de1d-db17-42fa-958d-13b10804f894",
@@ -52,13 +52,13 @@ const DevelopmentPage = () => {
                 >
                   <CardHeader>
                     <div
-                      className="flex h-12 w-12 items-center justify-center rounded-xl mb-4"
+                      className="flex h-12 w-12 items-center justify-center rounded-xl mb-4 text-white border border-white/20 shadow-md"
                       style={{
-                        backgroundColor: `${feature.color}20`,
-                        color: feature.color,
+                        backgroundColor: feature.color,
+                        boxShadow: `0 4px 14px ${feature.color}40`,
                       }}
                     >
-                      <IconComp className="h-6 w-6" />
+                      <IconComp className="h-6 w-6 stroke-[2.2] text-white" style={{ color: "#ffffff" }} />
                     </div>
                     <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
                       {feature.name}

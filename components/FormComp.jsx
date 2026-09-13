@@ -20,6 +20,7 @@ import { QuestionnaireData } from "@/constants";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import ShineBorder from "@/components/magicui/shine-border";
 import CountdownTimer from "./common/CountdownTimer";
 import { useSubmissions } from "@/components/SubmissionsProvider";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
@@ -450,17 +451,27 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none">
+    <div className="mx-auto max-w-4xl px-4 py-10 sm:py-16 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none">
       {/* Form Header */}
-      <div className="mb-8 pb-6 border-b border-border/40">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary mb-3">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Step 02 · Candidate Application</span>
+      <div className="mb-10 pb-8 sm:pb-10 border-b border-border/40">
+        <div className="mb-5 sm:mb-6 inline-flex">
+          <ShineBorder
+            borderRadius={9999}
+            borderWidth={1.5}
+            duration={8}
+            color={["#4285F4", "#EA4335", "#FBBC05", "#34A853"]}
+            className="shadow-xs transition-transform hover:scale-105"
+          >
+            <div className="inline-flex items-center gap-2 rounded-full bg-background/90 backdrop-blur-md px-3.5 py-1.5 text-xs font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Step 02 · Candidate Application</span>
+            </div>
+          </ShineBorder>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
           Application Form
         </h1>
-        <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+        <p className="mt-4 sm:mt-5 text-sm sm:text-base text-muted-foreground leading-relaxed">
           Applying to: <strong className="text-foreground">{departmentNames.join(" & ")}</strong>
         </p>
       </div>
@@ -651,8 +662,8 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 <span>{submitError}</span>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-              <p className="text-xs text-muted-foreground text-center sm:text-left max-w-md leading-normal">
+            <div className="flex flex-col lg:flex-row items-center lg:justify-between gap-6 pt-2">
+              <p className="text-xs text-muted-foreground text-center lg:text-left max-w-md leading-relaxed">
                 By submitting, you agree to our{" "}
                 <Link href="/terms" target="_blank" className="text-primary font-medium underline hover:text-primary/80 transition-colors">
                   User Agreement
@@ -663,12 +674,12 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                 </Link>.
               </p>
 
-              <div className="flex items-center justify-end gap-3 w-full sm:w-auto shrink-0">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 w-full sm:w-auto">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.push("/departments")}
-                  className="rounded-full px-6 font-medium"
+                  className="w-full sm:w-auto rounded-full px-6 font-medium"
                 >
                   Change Departments
                 </Button>
@@ -676,7 +687,7 @@ const FormComp = ({ dept1, dept2, isLoading, setIsLoading }) => {
                   type="submit"
                   size="lg"
                   disabled={isSubmitting}
-                  className="rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30"
+                  className="w-full sm:w-auto rounded-full px-8 font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30"
                 >
                   {isSubmitting ? (
                     <>

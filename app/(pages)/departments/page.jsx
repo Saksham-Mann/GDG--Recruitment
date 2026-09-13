@@ -15,6 +15,7 @@ import { useSubmissions } from "@/components/SubmissionsProvider";
 import { authClient } from "@/lib/auth-client";
 import CandidateStatusCard from "@/components/CandidateStatusCard";
 import DepartmentGridSkeleton from "@/components/skeletons/DepartmentGridSkeleton";
+import ShineBorder from "@/components/magicui/shine-border";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -170,40 +171,60 @@ const DepartmentsContent = () => {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <NavBar />
 
-      <main id="main-content" className="flex-1 py-10 sm:py-16">
+      <main id="main-content" className="flex-1 py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 pb-8 border-b border-border/40">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 sm:gap-8 pb-10 sm:pb-12 border-b border-border/40">
             {hasSubmitted ? (
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary mb-3">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  <span>Application Submitted · Candidate Portal</span>
+                <div className="mb-5 sm:mb-6 inline-flex">
+                  <ShineBorder
+                    borderRadius={9999}
+                    borderWidth={1.5}
+                    duration={8}
+                    color={["#4285F4", "#EA4335", "#FBBC05", "#34A853"]}
+                    className="shadow-xs transition-transform hover:scale-105"
+                  >
+                    <div className="inline-flex items-center gap-2 rounded-full bg-background/90 backdrop-blur-md px-3.5 py-1.5 text-xs font-medium text-primary">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>Application Submitted · Candidate Portal</span>
+                    </div>
+                  </ShineBorder>
                 </div>
-                <h1 className={`text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground ${spaceGrotesk.className}`}>
+                <h1 className={`text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-tight ${spaceGrotesk.className}`}>
                   Your Application Status
                 </h1>
-                <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl">
+                <p className="mt-4 sm:mt-5 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
                   Your recruitment application has been submitted and is currently being processed by our domain leads. You can review your submitted domains and status updates below.
                 </p>
               </div>
             ) : (
               <>
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary mb-3">
-                    <Layers className="h-3.5 w-3.5" />
-                    <span>Step 01 · Department Selection</span>
+                  <div className="mb-5 sm:mb-6 inline-flex">
+                    <ShineBorder
+                      borderRadius={9999}
+                      borderWidth={1.5}
+                      duration={8}
+                      color={["#4285F4", "#EA4335", "#FBBC05", "#34A853"]}
+                      className="shadow-xs transition-transform hover:scale-105"
+                    >
+                      <div className="inline-flex items-center gap-2 rounded-full bg-background/90 backdrop-blur-md px-3.5 py-1.5 text-xs font-medium text-primary">
+                        <Layers className="h-3.5 w-3.5" />
+                        <span>Step 01 · Department Selection</span>
+                      </div>
+                    </ShineBorder>
                   </div>
-                  <h1 className={`text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground ${spaceGrotesk.className}`}>
+                  <h1 className={`text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-tight ${spaceGrotesk.className}`}>
                     Pick Your Domains
                   </h1>
-                  <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl">
+                  <p className="mt-4 sm:mt-5 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
                     Select up to <strong>two</strong> departments you would like to apply for. You will answer tailored questions for each selected domain in the next step.
                   </p>
                 </div>
 
                 {/* Selection Counter & CTA Button */}
-                <div className="flex items-center gap-4 shrink-0">
+                <div className="mt-4 md:mt-0 flex items-center gap-5 sm:gap-6 shrink-0">
                   <div className="flex flex-col items-end">
                     <span className="text-xs text-muted-foreground">Selected</span>
                     <span className="text-lg font-bold text-foreground">
@@ -287,15 +308,16 @@ const DepartmentsContent = () => {
                       {/* Header Row: Icon & Status Badge */}
                       <div className="flex items-center justify-between gap-2 mb-4">
                         <div
-                          className="flex h-12 w-12 items-center justify-center rounded-xl shadow-sm border border-border/50 bg-neutral-900/10 dark:bg-neutral-900/80"
+                          className="flex h-12 w-12 items-center justify-center rounded-xl shadow-md border border-white/20 text-white"
                           style={{
-                            color: department.tone || "#3b82f6",
+                            backgroundColor: department.tone || "#3b82f6",
+                            boxShadow: department.tone ? `0 4px 14px ${department.tone}40` : "0 4px 14px rgba(0,0,0,0.15)",
                           }}
                         >
                           {IconComponent ? (
-                            <IconComponent className="h-6 w-6 stroke-[2.2] drop-shadow-xs" style={{ opacity: 1 }} />
+                            <IconComponent className="h-6 w-6 stroke-[2.2] text-white drop-shadow-xs" style={{ color: "#ffffff", opacity: 1 }} />
                           ) : (
-                            <Layers className="h-6 w-6 stroke-[2.2] drop-shadow-xs" style={{ opacity: 1 }} />
+                            <Layers className="h-6 w-6 stroke-[2.2] text-white drop-shadow-xs" style={{ color: "#ffffff", opacity: 1 }} />
                           )}
                         </div>
 

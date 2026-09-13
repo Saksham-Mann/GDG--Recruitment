@@ -1,7 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
-  <!-- Dark Rounded Squircle Badge -->
-  <rect width="64" height="64" rx="16" fill="#131314" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
-  
   <!-- Left Bracket < (Google Blue & Google Red) -->
   <!-- Top Arm: Google Blue -->
   <path d="M28 16 L12 32 L20 32 L28 24 Z" fill="#4285F4"/>

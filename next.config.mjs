@@ -49,6 +49,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/explore/departments",
+        destination: "/explore-departments",
+        permanent: false,
+      },
+      {
         source: "/signup",
         destination: "/auth/signin?mode=signup",
         permanent: false,

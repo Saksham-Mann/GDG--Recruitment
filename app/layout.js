@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { SubmissionsProvider } from "@/components/SubmissionsProvider";
 import ScrollTopProgress from "@/components/ScrollTopProgress";
 import CookieConsent from "@/components/CookieConsent";
+import GlobalParticles from "@/components/GlobalParticles";
 // Styling
 import "./globals.css";
 
@@ -91,6 +92,7 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           <SubmissionsProvider>
+            <GlobalParticles />
             <ScrollTopProgress />
             {children}
             <CookieConsent />
